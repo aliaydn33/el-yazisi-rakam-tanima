@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rakam Toplama Oturumu</title>
+<style>
+  :root {
+    --zemin: #F5F6F8; --kart: #FFFFFF; --yazi: #1C2430; --ikincil: #5A6472; --cizgi: #D9DDE3;
+    --vurgu: #2F4B7C; --vurgu-koyu: #22385E; --uyari: #9A3412; --tuval: #FFFFFF; --murekkep: #111111;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--zemin); color: var(--yazi);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  body { padding: 16px; }
+  main { max-width: 440px; margin: 0 auto; }
+  header { margin-bottom: 12px; }
+  header h1 { font-size: 1.15rem; margin: 0; }
+  header p { margin: 2px 0 0; font-size: .8rem; color: var(--ikincil); }
+  .kart { background: var(--kart); border: 1px solid var(--cizgi); border-radius: 12px; padding: 16px; }
+  .gizli { display: none !important; }
+  h2 { font-size: 1rem; margin: 0 0 8px; }
+  p, li { font-size: .92rem; line-height: 1.45; }
+  ul { padding-left: 1.1rem; margin: 6px 0 12px; }
+  label.onay { display: flex; gap: 10px; align-items: flex-start; font-size: .92rem; margin: 12px 0 16px; cursor: pointer; }
+  label.onay input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--vurgu); }
+  button { font: inherit; font-size: .95rem; min-height: 44px; min-width: 44px; padding: 0 16px; border-radius: 10px;
+    border: 1px solid var(--cizgi); background: var(--kart); color: var(--yazi); cursor: pointer; }
+  button.ana { background: var(--vurgu); border-color: var(--vurgu); color: #fff; font-weight: 600; }
+  button.ana:hover:not(:disabled) { background: var(--vurgu-koyu); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.metin { border: none; background: none; color: var(--ikincil); text-decoration: underline; padding: 0 4px; }
+  .tam { width: 100%; }
+  .ust { display: flex; justify-content: space-between; align-items: baseline; font-size: .85rem; color: var(--ikincil); }
+  .ilerleme { height: 6px; background: var(--cizgi); border-radius: 3px; margin: 6px 0 14px; overflow: hidden; }
+  .ilerleme div { height: 100%; width: 0; background: var(--vurgu); transition: width .2s; }
+  .istek { text-align: center; margin-bottom: 10px; font-size: .95rem; }
+  .istek strong { display: block; font-size: 3rem; line-height: 1.1; color: var(--vurgu); }
+  .tuval-kutu { position: relative; width: 100%; max-width: 340px; margin: 0 auto; aspect-ratio: 1 / 1; }
+  canvas { width: 100%; height: 100%; display: block; background: var(--tuval); border: 2px dashed var(--cizgi);
+    border-radius: 12px; touch-action: none; cursor: crosshair; }
+  .ipucu { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #9AA3AF; font-size: .9rem; pointer-events: none; }
+  .dugmeler { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 8px; margin-top: 12px; }
+  .alt { text-align: center; margin-top: 10px; }
+  .bilgi { font-size: .82rem; color: var(--ikincil); }
+  .not { background: #FFF7ED; border: 1px solid #FED7AA; color: var(--uyari); border-radius: 10px; padding: 10px 12px;
+    font-size: .85rem; margin-bottom: 12px; }
+  .not .satir { display: flex; gap: 8px; margin-top: 8px; }
+  .buyuk { font-size: 2.2rem; font-weight: 700; color: var(--vurgu); margin: 4px 0; }
+  code { font-size: .85em; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Rakam Toplama Oturumu</h1>
+    <p>El Yazısı Rakam Tanıma Projesi · Fırat Üniversitesi Bilgisayar Mühendisliği · 41.GRUP</p>
+  </header>
+
+  <div id="yedekNotu" class="not gizli">
+    Bu tarayıcıda yarım kalmış bir oturumun kaydı var (<span id="yedekBilgi"></span>).
+    <div class="satir">
+      <button id="yedekIndir">Dosyayı indir</button>
+      <button id="yedekSil" class="metin">Kaydı sil</button>
+    </div>
+  </div>
+
+  <!-- 1) Aydinlatma metni ve onay -->
+  <section id="ekranOnay" class="kart">
+    <h2>Aydınlatma metni</h2>
+    <p>Bu oturumda ekrana <strong>50 rakam</strong> (her rakamdan 5 tane) çizmeniz istenecek. Yaklaşık 5 dakika sürer.</p>
+    <ul>
+      <li>Kaydedilenler: çizimleriniz, çizim sırasında dokunulan noktaların koordinatları, giriş türü (fare, dokunma veya kalem), cihaz türü ve kayıt zamanı.</li>
+      <li>Adınız veya sizi tanımlayan herhangi bir bilgi <strong>istenmez</strong>. Size rastgele bir katılımcı numarası verilir.</li>
+      <li>Veriler yalnızca bu ders projesinde rakam tanıma modelini geliştirmek ve test etmek için kullanılır.</li>
+      <li>Katılım gönüllüdür. Oturumu istediğiniz an bırakabilirsiniz.</li>
+    </ul>
+    <label class="onay"><input type="checkbox" id="onayKutusu"> Yukarıdaki metni okudum, çizimlerimin bu amaçla kullanılmasını kabul ediyorum.</label>
+    <button id="baslat" class="ana tam" disabled>Oturumu başlat</button>
+  </section>
+
+  <!-- 2) Cizim -->
+  <section id="ekranCizim" class="kart gizli">
+    <div class="ust"><span id="katilimciEtiket"></span><span id="sayac"></span></div>
+    <div class="ilerleme"><div id="ilerlemeCubugu"></div></div>
+    <div class="istek">Lütfen bu rakamı çizin:<strong id="istenen">7</strong></div>
+    <div class="tuval-kutu">
+      <canvas id="tuval" aria-label="Çizim alanı"></canvas>
+      <div id="ipucu" class="ipucu">Parmağınızla, kalemle veya fareyle çizin</div>
+    </div>
+    <div class="dugmeler">
+      <button id="geriAl" disabled>Geri al</button>
+      <button id="temizle" disabled>Temizle</button>
+      <button id="kaydet" class="ana" disabled>Kaydet</button>
+    </div>
+    <div class="alt"><button id="bitir" class="metin">Oturumu burada bitir</button></div>
+  </section>
+
+  <!-- 3) Bitis -->
+  <section id="ekranBitis" class="kart gizli">
+    <h2>Teşekkürler!</h2>
+    <p class="buyuk" id="bitisSayi">50</p>
+    <p id="bitisMetin">çizim kaydedildi.</p>
+    <button id="indir" class="ana tam">Dosyayı indir</button>
+    <p class="bilgi">İnen dosyayı (<code id="dosyaAdi"></code>) projedeki <code>toplanan_veri</code> klasörüne koyun.</p>
+    <button id="yeni" class="tam">Yeni katılımcı</button>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var TEKRAR = 5;                         // her rakamdan kac cizim
+  var YEDEK_ANAHTAR = "rakam_toplama_yedek";
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ------------------------------------------------------------------ oturum
+  var oturum = null, sira = [], vuruslar = [], aktif = null, ornekBaslangic = null;
+
+  function katilimciNo() {
+    var n = (window.crypto && crypto.getRandomValues) ? crypto.getRandomValues(new Uint32Array(1))[0] % 9000
+                                                       : Math.floor(Math.random() * 9000);
+    return "K-" + (1000 + n);
+  }
+  function karistir(d) {
+    for (var i = d.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = d[i]; d[i] = d[j]; d[j] = t; }
+    return d;
+  }
+  function cihazTuru() {
+    var mobil = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+                (window.matchMedia && matchMedia("(pointer: coarse)").matches);
+    return mobil ? "mobil" : "masaüstü";
+  }
+  function simdi() { return new Date().toISOString(); }
+
+  function oturumBaslat() {
+    sira = [];
+    for (var t = 0; t < TEKRAR; t++) sira = sira.concat(karistir([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));   // her turda 10 rakam
+    oturum = {
+      proje: "El Yazısı Rakam Tanıma Projesi - 41.GRUP", surum: 1,
+      katilimci_no: katilimciNo(), cihaz: cihazTuru(),
+      ekran: { genislik: screen.width, yukseklik: screen.height, piksel_orani: window.devicePixelRatio || 1 },
+      onay: true, onay_zamani: simdi(), baslangic: simdi(), bitis: null,
+      planlanan: sira.length, ornekler: []
+    };
+    $("katilimciEtiket").textContent = "Katılımcı " + oturum.katilimci_no;
+    goster("ekranCizim");
+    boyutla();
+    sonrakiRakam();
+  }
+
+  function sonrakiRakam() {
+    var k = oturum.ornekler.length;
+    if (k >= sira.length) { bitir(); return; }
+    $("istenen").textContent = sira[k];
+    $("sayac").textContent = (k + 1) + " / " + sira.length;
+    $("ilerlemeCubugu").style.width = (100 * k / sira.length) + "%";
+    temizle();
+  }
+
+  function kaydet() {
+    if (!vuruslar.length) return;
+    var son = vuruslar[vuruslar.length - 1];
+    oturum.ornekler.push({
+      sira: oturum.ornekler.length + 1,
+      rakam: sira[oturum.ornekler.length],
+      giris_turu: vuruslar[0].tur,
+      zaman: simdi(),
+      sure_ms: Math.round(son.noktalar[son.noktalar.length - 1][2]),
+      tuval_boyutu: Math.round(tuval.getBoundingClientRect().width),
+      vuruslar: vuruslar.map(function (v) { return v.noktalar; }),
+      goruntu: kucukPng()
+    });
+    yedekle();
+    sonrakiRakam();
+  }
+
+  function bitir() {
+    oturum.bitis = simdi();
+    yedekle();
+    var n = oturum.ornekler.length;
+    $("bitisSayi").textContent = n;
+    $("bitisMetin").textContent = n === oturum.planlanan ? "çizim kaydedildi." : "çizim kaydedildi (oturum yarıda bitirildi).";
+    $("dosyaAdi").textContent = dosyaAdi(oturum);
+    $("indir").disabled = n === 0;
+    goster("ekranBitis");
+  }
+
+  function dosyaAdi(o) {
+    var d = new Date(o.baslangic || Date.now()), iki = function (n) { return (n < 10 ? "0" : "") + n; };
+    var t = d.getFullYear() + iki(d.getMonth() + 1) + iki(d.getDate()) + "-" + iki(d.getHours()) + iki(d.getMinutes());
+    return "rakamlar_" + o.katilimci_no + "_" + t + ".json";
+  }
+  function indir(o) {
+    var blob = new Blob([JSON.stringify(o)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = dosyaAdi(o);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  // ------------------------------------------------------------------ yedek (sayfa yenilenirse veri kaybolmasin)
+  function yedekle() {
+    try { localStorage.setItem(YEDEK_ANAHTAR, JSON.stringify(oturum)); } catch (e) { /* depolama kapali olabilir */ }
+  }
+  function yedekOku() {
+    try { var s = localStorage.getItem(YEDEK_ANAHTAR); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+  }
+  function yedekSil() {
+    try { localStorage.removeItem(YEDEK_ANAHTAR); } catch (e) { }
+    $("yedekNotu").classList.add("gizli");
+  }
+
+  // ------------------------------------------------------------------ tuval
+  var tuval = $("tuval"), ctx = tuval.getContext("2d");
+
+  function boyutla() {
+    var r = tuval.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (!r.width) return;
+    tuval.width = Math.round(r.width * dpr); tuval.height = Math.round(r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    yenidenCiz();
+  }
+  function kalinlik() { return Math.max(6, tuval.getBoundingClientRect().width * 0.055); }
+
+  function yenidenCiz() {
+    var r = tuval.getBoundingClientRect();
+    ctx.clearRect(0, 0, r.width, r.height);
+    ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#111"; ctx.fillStyle = "#111";
+    ctx.lineWidth = kalinlik();
+    vuruslar.forEach(function (v) { vurusCiz(v.noktalar); });
+    durumGuncelle();
+  }
+  function vurusCiz(n) {
+    if (!n.length) return;
+    if (n.length === 1) { ctx.beginPath(); ctx.arc(n[0][0], n[0][1], ctx.lineWidth / 2, 0, 2 * Math.PI); ctx.fill(); return; }
+    ctx.beginPath(); ctx.moveTo(n[0][0], n[0][1]);
+    for (var i = 1; i < n.length; i++) ctx.lineTo(n[i][0], n[i][1]);
+    ctx.stroke();
+  }
+  function nokta(e) {
+    var r = tuval.getBoundingClientRect();
+    return [Math.round((e.clientX - r.left) * 10) / 10, Math.round((e.clientY - r.top) * 10) / 10,
+            Math.round(performance.now() - ornekBaslangic)];
+  }
+
+  tuval.addEventListener("pointerdown", function (e) {
+    if (aktif !== null) return;
+    e.preventDefault();
+    tuval.setPointerCapture(e.pointerId);
+    if (!vuruslar.length) ornekBaslangic = performance.now();
+    aktif = e.pointerId;
+    vuruslar.push({ tur: e.pointerType || "bilinmiyor", noktalar: [nokta(e)] });
+    yenidenCiz();
+  });
+  tuval.addEventListener("pointermove", function (e) {
+    if (e.pointerId !== aktif) return;
+    e.preventDefault();
+    var v = vuruslar[vuruslar.length - 1];
+    var olaylar = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    if (!olaylar.length) olaylar = [e];
+    olaylar.forEach(function (o) {
+      var p = nokta(o), s = v.noktalar[v.noktalar.length - 1];
+      if (p[0] !== s[0] || p[1] !== s[1]) {
+        ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
+        v.noktalar.push(p);
+      }
+    });
+  });
+  function vurusBitti(e) {
+    if (e.pointerId !== aktif) return;
+    aktif = null;
+    durumGuncelle();
+  }
+  tuval.addEventListener("pointerup", vurusBitti);
+  tuval.addEventListener("pointercancel", vurusBitti);
+
+  function temizle() { vuruslar = []; aktif = null; yenidenCiz(); }
+  function geriAl() { vuruslar.pop(); yenidenCiz(); }
+  function durumGuncelle() {
+    var bos = vuruslar.length === 0;
+    $("kaydet").disabled = bos; $("temizle").disabled = bos; $("geriAl").disabled = bos;
+    $("ipucu").style.display = bos ? "flex" : "none";
+  }
+
+  // Kayitta cizimin kucuk bir PNG kopyasi da saklanir (beyaz zemin, siyah murekkep, 140x140)
+  function kucukPng() {
+    var k = document.createElement("canvas"); k.width = k.height = 140;
+    var c = k.getContext("2d"), r = tuval.getBoundingClientRect(), o = 140 / r.width;
+    c.fillStyle = "#fff"; c.fillRect(0, 0, 140, 140);
+    c.lineCap = "round"; c.lineJoin = "round"; c.strokeStyle = "#000"; c.fillStyle = "#000";
+    c.lineWidth = kalinlik() * o;
+    vuruslar.forEach(function (v) {
+      var n = v.noktalar;
+      if (n.length === 1) { c.beginPath(); c.arc(n[0][0] * o, n[0][1] * o, c.lineWidth / 2, 0, 2 * Math.PI); c.fill(); return; }
+      c.beginPath(); c.moveTo(n[0][0] * o, n[0][1] * o);
+      for (var i = 1; i < n.length; i++) c.lineTo(n[i][0] * o, n[i][1] * o);
+      c.stroke();
+    });
+    return k.toDataURL("image/png");
+  }
+
+  // ------------------------------------------------------------------ ekranlar ve dugmeler
+  function goster(id) {
+    ["ekranOnay", "ekranCizim", "ekranBitis"].forEach(function (e) { $(e).classList.toggle("gizli", e !== id); });
+  }
+  $("onayKutusu").addEventListener("change", function () { $("baslat").disabled = !this.checked; });
+  $("baslat").addEventListener("click", function () { if ($("onayKutusu").checked) oturumBaslat(); });
+  $("kaydet").addEventListener("click", kaydet);
+  $("temizle").addEventListener("click", temizle);
+  $("geriAl").addEventListener("click", geriAl);
+  $("bitir").addEventListener("click", function () {
+    if (confirm("Oturumu bitirmek istiyor musunuz? Şimdiye kadarki çizimler kaydedilebilir.")) bitir();
+  });
+  $("indir").addEventListener("click", function () { indir(oturum); yedekSil(); });
+  $("yeni").addEventListener("click", function () {
+    if (oturum && oturum.ornekler.length && yedekOku() &&
+        !confirm("Dosyayı indirmediniz. Yine de yeni katılımcıya geçilsin mi?")) return;
+    yedekSil(); oturum = null; $("onayKutusu").checked = false; $("baslat").disabled = true; goster("ekranOnay");
+  });
+  window.addEventListener("resize", function () { if (oturum && !$("ekranCizim").classList.contains("gizli")) boyutla(); });
+
+  // sayfa acilisinda yarim kalmis oturum var mi?
+  var y = yedekOku();
+  if (y && y.ornekler && y.ornekler.length) {
+    $("yedekBilgi").textContent = y.katilimci_no + ", " + y.ornekler.length + " çizim";
+    $("yedekNotu").classList.remove("gizli");
+    $("yedekIndir").addEventListener("click", function () { indir(y); yedekSil(); });
+    $("yedekSil").addEventListener("click", function () { if (confirm("Kayıt silinsin mi?")) yedekSil(); });
+  }
+})();
+</script>
+</body>
+</html>

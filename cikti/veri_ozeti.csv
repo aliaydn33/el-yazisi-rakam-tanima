@@ -1,0 +1,7 @@
+﻿veri_seti,parca,goruntu_sayisi,kisi_sayisi,en_az_sinif,en_az,en_cok_sinif,en_cok,denge_orani,murekkep_orani,ortalama_parlaklik
+QMNIST,egitim,60000,539,5,5421,1,6742,0.804,0.1618,33.36
+QMNIST,test10k (=MNIST test),10000,297,5,892,1,1135,0.786,0.1634,33.84
+QMNIST,test50k,50000,488,5,4562,1,5656,0.807,0.1625,33.55
+EMNIST-Digits,egitim,240000,,0,24000,0,24000,1.0,0.2178,44.18
+EMNIST-Digits,test,40000,,0,4000,0,4000,1.0,0.218,44.25
+Dokunmatik,tum,20074,253,5,2002,6,2015,0.994,0.1617,29.64

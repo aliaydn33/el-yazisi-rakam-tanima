@@ -1,0 +1,28 @@
+TOPLANAN VERI OZETI
+Katilimci sayisi : 1
+Toplam cizim     : 50
+Giris turu       : mouse: 50
+Cihaz            : masaüstü: 50
+Rakam basina     : 0: 5, 1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 5, 8: 5, 9: 5
+Ortalama cizim suresi: 0.91 sn, ortalama vurus sayisi: 1.10
+Murekkep orani (28x28, >50): 0.170
+
+Katilimcilar:
+           cizim giris_turu     cihaz
+katilimci                            
+K-5347        50      mouse  masaüstü
+
+MODELLERIN TOPLANAN VERIDEKI SONUCLARI (on sonuc, ornek sayisi az)
+                                       model  ornek  dogru  dogruluk_%  hata_sayisi
+                       2. hafta CNN (QMNIST)     50     50       100.0            0
+                         3. hafta D1: QMNIST     50     50       100.0            0
+               3. hafta D2: QMNIST + artirma     50     50       100.0            0
+                         3. hafta D3: EMNIST     50     50       100.0            0
+               3. hafta D4: EMNIST + artirma     50     50       100.0            0
+4. hafta secilen model (LeNet-5 benzeri CNN)     50     50       100.0            0
+  2. hafta CNN (QMNIST) yanlislari: yok
+  3. hafta D1: QMNIST yanlislari: yok
+  3. hafta D2: QMNIST + artirma yanlislari: yok
+  3. hafta D3: EMNIST yanlislari: yok
+  3. hafta D4: EMNIST + artirma yanlislari: yok
+  4. hafta secilen model (LeNet-5 benzeri CNN) yanlislari: yok

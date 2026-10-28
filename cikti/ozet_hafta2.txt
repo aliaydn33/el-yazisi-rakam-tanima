@@ -1,0 +1,9 @@
+HAFTA 2 SONUCLARI
+Tarih: 2026-10-14 20:21
+Cihaz: cpu (AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD), PyTorch 2.14.1+cpu, epoch: 10, tohum: 42
+
+model  parametre                 test_kumesi  ornek  dogruluk_%  hata_sayisi  makro_F1  egitim_suresi_sn
+  MLP     101770 MNIST test (QMNIST test10k)  10000       97.31          269    0.9729                 8
+  MLP     101770            Dokunmatik ekran  20074       94.56         1093    0.9454                 8
+  CNN      61706 MNIST test (QMNIST test10k)  10000       99.00          100    0.9899                33
+  CNN      61706            Dokunmatik ekran  20074       97.60          482    0.9760                33

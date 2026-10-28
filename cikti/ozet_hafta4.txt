@@ -1,0 +1,52 @@
+HAFTA 4 SONUCLARI
+Tarih: 2026-10-28 18:27
+Cihaz: cpu (AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD), PyTorch 2.14.1+cpu, epoch: 10, tohumlar: [42, 43, 44, 45, 46]
+Dokunmatik veri ayrimi: dogrulama 51 kisi (3987 cizim), test 202 kisi (16087 cizim)
+
+[A] VERI ARTIRMA YONTEMLERI (ortalama ± standart sapma, %)
+              ad  n mnist_test_% dok_dogrulama_%   dok_test_%    toplanan_%  sure_sn
+             Yok  5 98.97 ± 0.07    97.83 ± 0.24 97.24 ± 0.31 100.00 ± 0.00     25.2
+        Döndürme  5 98.92 ± 0.12    97.04 ± 0.91 96.72 ± 0.98  98.40 ± 2.61     19.0
+       Ölçekleme  5 99.03 ± 0.06    97.46 ± 0.52 97.05 ± 0.63  99.60 ± 0.89     18.6
+        Kaydırma  5 98.94 ± 0.18    97.64 ± 0.14 97.16 ± 0.14  99.20 ± 1.10     18.9
+ Çizgi kalınlığı  5 98.99 ± 0.08    97.57 ± 0.64 97.12 ± 0.56 100.00 ± 0.00     21.8
+Hepsi (3. hafta)  5 98.91 ± 0.17    97.55 ± 0.63 97.23 ± 0.63 100.00 ± 0.00     24.0
+
+  Döndürme                                 - Yok: fark -0.79 puan, eslestirilmis t testi p = 0.179
+  Ölçekleme                                - Yok: fark -0.38 puan, eslestirilmis t testi p = 0.246
+  Kaydırma                                 - Yok: fark -0.19 puan, eslestirilmis t testi p = 0.122
+  Çizgi kalınlığı                          - Yok: fark -0.26 puan, eslestirilmis t testi p = 0.375
+  Hepsi (3. hafta)                         - Yok: fark -0.28 puan, eslestirilmis t testi p = 0.392
+  En yuksek dokunmatik dogrulama: Yok (Yok'a gore p = nan)
+  SECILEN ARTIRMA AYARI: Yok  (kural: en iyisi Yok'tan anlamli olarak iyi degilse artirma kullanilmaz)
+
+[B] MODEL KARSILASTIRMASI (QMNIST, artirma: Yok)
+                 ad  n mnist_test_% dok_dogrulama_%   dok_test_%    toplanan_%  sure_sn  parametre  dosya_KB  tahmin_ms (CPU, tek goruntu, medyan)
+                MLP  5 97.54 ± 0.19    93.84 ± 0.92 93.98 ± 0.76  96.80 ± 3.03      3.0     101770     400.0                                 0.049
+LeNet-5 benzeri CNN  5 98.97 ± 0.07    97.83 ± 0.24 97.24 ± 0.31 100.00 ± 0.00     25.2      61706     245.3                                 0.403
+          Derin CNN  5 99.21 ± 0.09    98.00 ± 0.40 97.67 ± 0.43 100.00 ± 0.00    153.8     241994     955.7                                 0.576
+
+  Eslestirilmis t testi (5 tohum) ve McNemar testi (her tohumda ayri, dokunmatik test):
+    MLP - LeNet-5 benzeri CNN | mnist_test_%: fark -1.42 puan, p = 0.0001
+    MLP - LeNet-5 benzeri CNN | dok_test_%: fark -3.26 puan, p = 0.0003
+    MLP - LeNet-5 benzeri CNN | McNemar: 5/5 tohumda p < 0,05  (42: 76/667 p=6.8e-104; 43: 100/756 p=5.2e-111; 44: 64/483 p=1.9e-71; 45: 73/575 p=3.1e-86; 46: 76/533 p=3.1e-76)
+    MLP - Derin CNN | mnist_test_%: fark -1.67 puan, p = 0.0000
+    MLP - Derin CNN | dok_test_%: fark -3.69 puan, p = 0.0005
+    MLP - Derin CNN | McNemar: 5/5 tohumda p < 0,05  (42: 121/666 p=9.1e-84; 43: 68/883 p=1.5e-153; 44: 110/587 p=1.1e-72; 45: 153/720 p=8.6e-82; 46: 65/626 p=1.1e-100)
+    LeNet-5 benzeri CNN - Derin CNN | mnist_test_%: fark -0.25 puan, p = 0.0059
+    LeNet-5 benzeri CNN - Derin CNN | dok_test_%: fark -0.43 puan, p = 0.1108
+    LeNet-5 benzeri CNN - Derin CNN | McNemar: 5/5 tohumda p < 0,05  (42: 189/143 p=1.4e-02; 43: 62/221 p=5.9e-21; 44: 136/194 p=1.7e-03; 45: 186/251 p=2.2e-03; 46: 81/185 p=2.7e-10)
+  Dokunmatik dogrulamada en yuksek ortalama: Derin CNN
+  UYGULAMA ICIN SECILEN MODEL: LeNet-5 benzeri CNN  (kural: daha kucuk bir modelle fark anlamli degilse kucuk model secilir)
+
+  Secilen modelin dokunmatik testte en cok karistirdiklari (tohum 42): 4->6: 72, 6->0: 61, 8->6: 38, 1->7: 32, 3->7: 20, 1->2: 19
+
+[C] VERI KAYNAGI (LeNet-5 benzeri CNN, artirma: Yok)
+             ad  n mnist_test_% dok_dogrulama_%   dok_test_%    toplanan_%  sure_sn
+         QMNIST  5 98.97 ± 0.07    97.83 ± 0.24 97.24 ± 0.31 100.00 ± 0.00     25.2
+  EMNIST-Digits  5            -    97.13 ± 0.48 96.66 ± 0.39  99.20 ± 1.10    112.4
+QMNIST + EMNIST  5            -    98.12 ± 0.46 97.77 ± 0.47  99.60 ± 0.89    165.1
+  EMNIST-Digits - QMNIST | dok. test: fark -0.58 puan, p = 0.0497
+  QMNIST + EMNIST - QMNIST | dok. test: fark +0.53 puan, p = 0.1130
+
+Ekibin topladigi veri: 1 katilimci, 50 cizim (sonuclar tablolardaki toplanan_% sutununda)

@@ -1,0 +1,9 @@
+﻿deney,egitim_verisi,veri_artirma,egitim_ornegi,test_kumesi,ornek,dogruluk_%,hata_sayisi,hata_orani_%,makro_F1,egitim_suresi_sn,model_dosyasi
+QMNIST,QMNIST,yok,54000,MNIST test,10000,99.0,100,1.0,0.9899,19,cnn_qmnist_hafta3.pt
+QMNIST,QMNIST,yok,54000,Dokunmatik ekran,20074,97.6,482,2.4,0.976,19,cnn_qmnist_hafta3.pt
+QMNIST + artirma,QMNIST,var,54000,MNIST test,10000,98.98,102,1.02,0.9897,25,cnn_qmnist_artirmali_hafta3.pt
+QMNIST + artirma,QMNIST,var,54000,Dokunmatik ekran,20074,97.45,511,2.55,0.9746,25,cnn_qmnist_artirmali_hafta3.pt
+EMNIST,EMNIST-Digits,yok,216000,EMNIST test,40000,99.45,219,0.55,0.9945,68,cnn_emnist_hafta3.pt
+EMNIST,EMNIST-Digits,yok,216000,Dokunmatik ekran,20074,97.21,561,2.79,0.972,68,cnn_emnist_hafta3.pt
+EMNIST + artirma,EMNIST-Digits,var,216000,EMNIST test,40000,99.51,196,0.49,0.9951,120,cnn_emnist_artirmali_hafta3.pt
+EMNIST + artirma,EMNIST-Digits,var,216000,Dokunmatik ekran,20074,97.35,532,2.65,0.9736,120,cnn_emnist_artirmali_hafta3.pt

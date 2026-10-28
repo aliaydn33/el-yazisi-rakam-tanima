@@ -1,0 +1,12 @@
+{
+  "cizim_sayisi": 500,
+  "ortalama_mutlak_fark_gri_duzey": 1.488,
+  "en_buyuk_fark_gri_duzey": 148,
+  "ayni_piksel_orani_%": 78.05,
+  "2_gri_duzeyden_az_farkli_piksel_%": 86.24,
+  "model": "LeNet-5 benzeri CNN",
+  "tahmin_ayni_%": 99.6,
+  "python_dogruluk_%": 96.6,
+  "js_dogruluk_%": 96.6,
+  "js_on_isleme_ms_cizim_basina": 1.97
+}

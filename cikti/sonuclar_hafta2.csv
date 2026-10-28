@@ -1,0 +1,5 @@
+﻿model,parametre,test_kumesi,ornek,dogruluk_%,hata_sayisi,makro_F1,egitim_suresi_sn
+MLP,101770,MNIST test (QMNIST test10k),10000,97.31,269,0.9729,8
+MLP,101770,Dokunmatik ekran,20074,94.56,1093,0.9454,8
+CNN,61706,MNIST test (QMNIST test10k),10000,99.0,100,0.9899,33
+CNN,61706,Dokunmatik ekran,20074,97.6,482,0.976,33

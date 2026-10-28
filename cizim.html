@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rakam Çizim Ekranı</title>
+<style>
+  :root {
+    --zemin: #F5F6F8; --kart: #FFFFFF; --yazi: #1C2430; --ikincil: #5A6472; --cizgi: #D9DDE3;
+    --vurgu: #2F4B7C; --vurgu-koyu: #22385E;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--zemin); color: var(--yazi);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  body { padding: 16px; }
+  main { max-width: 760px; margin: 0 auto; }
+  header { margin-bottom: 12px; }
+  header h1 { font-size: 1.15rem; margin: 0; }
+  header p { margin: 2px 0 0; font-size: .8rem; color: var(--ikincil); }
+  .izgara { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 12px; align-items: start; }
+  @media (max-width: 620px) { .izgara { grid-template-columns: 1fr; } }
+  .kart { background: var(--kart); border: 1px solid var(--cizgi); border-radius: 12px; padding: 16px; }
+  h2 { font-size: .95rem; margin: 0 0 8px; }
+  .tuval-kutu { position: relative; width: 100%; max-width: 380px; margin: 0 auto; aspect-ratio: 1 / 1; }
+  #tuval { width: 100%; height: 100%; display: block; background: #fff; border: 2px dashed var(--cizgi);
+    border-radius: 12px; touch-action: none; cursor: crosshair; }
+  .ipucu { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #9AA3AF; font-size: .9rem; pointer-events: none; text-align: center; padding: 0 24px; }
+  .dugmeler { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px auto 0; max-width: 380px; }
+  button { font: inherit; font-size: .95rem; min-height: 44px; padding: 0 16px; border-radius: 10px;
+    border: 1px solid var(--cizgi); background: var(--kart); color: var(--yazi); cursor: pointer; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  #onizleme { width: 168px; height: 168px; display: block; margin: 0 auto; image-rendering: pixelated;
+    background: #000; border-radius: 6px; }
+  .bilgi { font-size: .8rem; color: var(--ikincil); line-height: 1.45; margin: 8px 0 0; }
+  .tahmin { margin-top: 12px; border: 1px dashed var(--cizgi); border-radius: 10px; padding: 10px; text-align: center;
+    color: var(--ikincil); font-size: .85rem; }
+  .tahmin strong { display: block; font-size: 2rem; color: #B8BEC7; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; font-size: .8rem; margin: 10px 0 0; }
+  dt { color: var(--ikincil); } dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Rakam Çizim Ekranı</h1>
+    <p>El Yazısı Rakam Tanıma Projesi · 41.GRUP · 4. hafta sürümü (canlı tahmin 5. haftada eklenecek)</p>
+  </header>
+  <div class="izgara">
+    <section class="kart">
+      <div class="tuval-kutu">
+        <canvas id="tuval" aria-label="Çizim alanı"></canvas>
+        <div id="ipucu" class="ipucu">Buraya bir rakam çizin (parmak, kalem veya fare)</div>
+      </div>
+      <div class="dugmeler">
+        <button id="geriAl" disabled>Geri al</button>
+        <button id="temizle" disabled>Temizle</button>
+      </div>
+    </section>
+    <aside class="kart">
+      <h2>Modelin göreceği görüntü</h2>
+      <canvas id="onizleme" width="28" height="28" aria-label="28×28 önizleme"></canvas>
+      <p class="bilgi">Çizim, MNIST'in hazırlanma biçimine göre kırpılıp 20×20'ye küçültülür ve ağırlık merkezine
+        göre 28×28'lik alana yerleştirilir. Python'daki ön işlemeyle aynıdır.</p>
+      <dl>
+        <dt>Vuruş</dt><dd id="vurusSayi">0</dd>
+        <dt>Nokta</dt><dd id="noktaSayi">0</dd>
+        <dt>Ön işleme süresi</dt><dd id="sure">-</dd>
+      </dl>
+      <div class="tahmin">Tahmin<strong>?</strong>Model 5. haftada eklenecek</div>
+    </aside>
+  </div>
+</main>
+
+<script>
+/* ============================================================================================
+   ON ISLEME (Python'daki ortak.py ile ayni adimlar)
+     1) vuruslariCiz      : vuruslar -> en uzun kenari 200 piksel, 26 piksel kalinlikta cizim (siyah zemin, beyaz)
+     2) mnistBicimi       : kirp -> en-boy oranini koruyarak 20x20'ye kucult (Lanczos) -> 28x28 ortasina koy
+                            -> agirlik merkezine gore kaydir (dogrusal ara degerleme)
+   Sonuc: 784 elemanli Uint8Array (0 = zemin, 255 = murekkep). Model girdisi = deger / 255.
+   ============================================================================================ */
+var OnIsleme = (function () {
+  "use strict";
+
+  function vuruslariCiz(vuruslar, kenar, kalinlik, bosluk, kaydir) {
+    kenar = kenar || 200; kalinlik = kalinlik || 26; bosluk = (bosluk === undefined) ? 30 : bosluk;
+    kaydir = (kaydir === undefined) ? 0 : kaydir;
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    vuruslar.forEach(function (v) { v.forEach(function (p) {
+      if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
+    }); });
+    var olcek = kenar / Math.max(x1 - x0, y1 - y0, 1e-6), boyut = Math.round(kenar + 2 * bosluk);
+    var c = document.createElement("canvas"); c.width = c.height = boyut;
+    var g = c.getContext("2d", { willReadFrequently: true });
+    g.fillStyle = "#000"; g.fillRect(0, 0, boyut, boyut);
+    g.strokeStyle = g.fillStyle = "#fff"; g.lineWidth = kalinlik; g.lineCap = "round"; g.lineJoin = "round";
+    g.translate(kaydir, kaydir);
+    vuruslar.forEach(function (v) {
+      var p = v.map(function (q) { return [(q[0] - x0) * olcek + bosluk, (q[1] - y0) * olcek + bosluk]; });
+      if (p.length === 1) { g.beginPath(); g.arc(p[0][0], p[0][1], kalinlik / 2, 0, 2 * Math.PI); g.fill(); return; }
+      g.beginPath(); g.moveTo(p[0][0], p[0][1]);
+      for (var i = 1; i < p.length; i++) g.lineTo(p[i][0], p[i][1]);
+      g.stroke();
+    });
+    var veri = g.getImageData(0, 0, boyut, boyut).data, gri = new Float32Array(boyut * boyut);
+    for (var i = 0; i < gri.length; i++) gri[i] = veri[i * 4];
+    return { gri: gri, w: boyut, h: boyut };
+  }
+
+  // Pillow'un Image.resize(LANCZOS) yontemi: once yatay, sonra dikey gecis; aradaki goruntu 8 bit
+  function sinc(x) { if (x === 0) return 1; x *= Math.PI; return Math.sin(x) / x; }
+  function lanczos(x) { return (x > -3 && x < 3) ? sinc(x) * sinc(x / 3) : 0; }
+  function katsayilar(girdi, cikti) {
+    var olcek = girdi / cikti, fo = Math.max(olcek, 1), destek = 3 * fo, sonuc = [];
+    for (var xx = 0; xx < cikti; xx++) {
+      var merkez = (xx + 0.5) * olcek, xmin = Math.max(Math.floor(merkez - destek + 0.5), 0);
+      var xmax = Math.min(Math.floor(merkez + destek + 0.5), girdi), w = [], top = 0;
+      for (var x = xmin; x < xmax; x++) { var k = lanczos((x - merkez + 0.5) / fo); w.push(k); top += k; }
+      sonuc.push({ bas: xmin, w: w.map(function (k) { return top ? k / top : 0; }) });
+    }
+    return sonuc;
+  }
+  function sekiz(v) { v = Math.round(v); return v < 0 ? 0 : (v > 255 ? 255 : v); }
+  function boyutlandir(src, w, h, yw, yh) {
+    var kx = katsayilar(w, yw), ara = new Float32Array(yw * h), out = new Float32Array(yw * yh);
+    for (var y = 0; y < h; y++) for (var xx = 0; xx < yw; xx++) {
+      var s = 0, k = kx[xx]; for (var i = 0; i < k.w.length; i++) s += src[y * w + k.bas + i] * k.w[i];
+      ara[y * yw + xx] = sekiz(s);
+    }
+    var ky = katsayilar(h, yh);
+    for (var yy = 0; yy < yh; yy++) for (var x = 0; x < yw; x++) {
+      var t = 0, q = ky[yy]; for (var j = 0; j < q.w.length; j++) t += ara[(q.bas + j) * yw + x] * q.w[j];
+      out[yy * yw + x] = sekiz(t);
+    }
+    return out;
+  }
+  function pyRound(x) {                       // Python'un round(): tam yarida cift sayiya yuvarlar
+    var f = Math.floor(x), d = x - f;
+    if (Math.abs(d - 0.5) < 1e-12) return (f % 2 === 0) ? f : f + 1;
+    return Math.round(x);
+  }
+
+  function mnistBicimi(g) {
+    var w = g.w, h = g.h, a = g.gri, r0 = -1, r1 = -1, c0 = -1, c1 = -1, x, y;
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) if (a[y * w + x] > 30) {
+      if (r0 < 0) r0 = y; r1 = y; if (c0 < 0 || x < c0) c0 = x; if (x > c1) c1 = x;
+    }
+    var kutu = new Float32Array(784);
+    if (r0 < 0) return new Uint8Array(784);
+    var kh = r1 - r0 + 1, kw = c1 - c0 + 1, kirpik = new Float32Array(kh * kw);
+    for (y = 0; y < kh; y++) for (x = 0; x < kw; x++) kirpik[y * kw + x] = a[(r0 + y) * w + c0 + x];
+    var olcek = 20 / Math.max(kh, kw), yw = Math.max(1, pyRound(kw * olcek)), yh = Math.max(1, pyRound(kh * olcek));
+    var kucuk = boyutlandir(kirpik, kw, kh, yw, yh);
+    var ust = Math.floor((28 - yh) / 2), sol = Math.floor((28 - yw) / 2);
+    for (y = 0; y < yh; y++) for (x = 0; x < yw; x++) kutu[(ust + y) * 28 + sol + x] = kucuk[y * yw + x];
+    // agirlik merkezi
+    var top = 0, sy = 0, sx = 0;
+    for (y = 0; y < 28; y++) for (x = 0; x < 28; x++) { var v = kutu[y * 28 + x]; top += v; sy += y * v; sx += x * v; }
+    var cy = sy / top, cx = sx / top;
+    var dy = Math.min(Math.max(14 - cy, -ust), 28 - (ust + yh)), dx = Math.min(Math.max(14 - cx, -sol), 28 - (sol + yw));
+    // scipy.ndimage.shift(order=1, mode="constant") ile ayni: kaynak = hedef - kayma, disarisi 0
+    var out = new Uint8Array(784);
+    for (y = 0; y < 28; y++) for (x = 0; x < 28; x++) {
+      var ky = y - dy, kx = x - dx;
+      if (ky < -1e-9 || kx < -1e-9 || ky > 27 + 1e-9 || kx > 27 + 1e-9) continue;
+      var y0 = Math.min(Math.floor(ky), 27), x0 = Math.min(Math.floor(kx), 27), fy = ky - y0, fx = kx - x0;
+      var y1 = Math.min(y0 + 1, 27), x1 = Math.min(x0 + 1, 27);
+      var d = kutu[y0 * 28 + x0] * (1 - fy) * (1 - fx) + kutu[y0 * 28 + x1] * (1 - fy) * fx +
+              kutu[y1 * 28 + x0] * fy * (1 - fx) + kutu[y1 * 28 + x1] * fy * fx;
+      out[y * 28 + x] = d <= 0 ? 0 : (d >= 255 ? 255 : Math.floor(d));
+    }
+    return out;
+  }
+
+  return { vuruslariCiz: vuruslariCiz, mnistBicimi: mnistBicimi,
+           cizimden28: function (vuruslar) { return mnistBicimi(vuruslariCiz(vuruslar)); } };
+})();
+
+/* ============================================================================================
+   TUVAL: cizim, geri al, temizle ve canli onizleme
+   ============================================================================================ */
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var tuval = $("tuval"), ctx = tuval.getContext("2d"), onz = $("onizleme").getContext("2d");
+  var vuruslar = [], aktif = null, bekleyen = false;
+
+  function boyutla() {
+    var r = tuval.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    tuval.width = Math.round(r.width * dpr); tuval.height = Math.round(r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    yenidenCiz();
+  }
+  function yenidenCiz() {
+    var r = tuval.getBoundingClientRect();
+    ctx.clearRect(0, 0, r.width, r.height);
+    ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = ctx.fillStyle = "#111";
+    ctx.lineWidth = Math.max(6, r.width * 0.055);
+    vuruslar.forEach(function (n) {
+      if (n.length === 1) { ctx.beginPath(); ctx.arc(n[0][0], n[0][1], ctx.lineWidth / 2, 0, 2 * Math.PI); ctx.fill(); return; }
+      ctx.beginPath(); ctx.moveTo(n[0][0], n[0][1]);
+      for (var i = 1; i < n.length; i++) ctx.lineTo(n[i][0], n[i][1]);
+      ctx.stroke();
+    });
+    durum();
+  }
+  function durum() {
+    var bos = vuruslar.length === 0;
+    $("geriAl").disabled = bos; $("temizle").disabled = bos;
+    $("ipucu").style.display = bos ? "flex" : "none";
+    $("vurusSayi").textContent = vuruslar.length;
+    $("noktaSayi").textContent = vuruslar.reduce(function (t, v) { return t + v.length; }, 0);
+    onizlemeIste();
+  }
+  function onizlemeIste() {
+    if (bekleyen) return;
+    bekleyen = true;
+    requestAnimationFrame(function () { bekleyen = false; onizlemeCiz(); });
+  }
+  function onizlemeCiz() {
+    var img = onz.createImageData(28, 28);
+    if (vuruslar.length) {
+      var t0 = performance.now(), g = OnIsleme.cizimden28(vuruslar), ms = performance.now() - t0;
+      for (var i = 0; i < 784; i++) { img.data[4 * i] = img.data[4 * i + 1] = img.data[4 * i + 2] = g[i]; img.data[4 * i + 3] = 255; }
+      $("sure").textContent = ms.toFixed(1) + " ms";
+    } else {
+      for (var j = 0; j < 784; j++) img.data[4 * j + 3] = 255;
+      $("sure").textContent = "-";
+    }
+    onz.putImageData(img, 0, 0);
+  }
+  function nokta(e) { var r = tuval.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+
+  tuval.addEventListener("pointerdown", function (e) {
+    if (aktif !== null) return;
+    e.preventDefault(); tuval.setPointerCapture(e.pointerId); aktif = e.pointerId;
+    vuruslar.push([nokta(e)]); yenidenCiz();
+  });
+  tuval.addEventListener("pointermove", function (e) {
+    if (e.pointerId !== aktif) return;
+    e.preventDefault();
+    var v = vuruslar[vuruslar.length - 1], olaylar = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
+    olaylar.forEach(function (o) {
+      var p = nokta(o), s = v[v.length - 1];
+      if (p[0] !== s[0] || p[1] !== s[1]) { ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); v.push(p); }
+    });
+    onizlemeIste();
+  });
+  function bitti(e) { if (e.pointerId === aktif) { aktif = null; durum(); } }
+  tuval.addEventListener("pointerup", bitti);
+  tuval.addEventListener("pointercancel", bitti);
+  $("temizle").addEventListener("click", function () { vuruslar = []; aktif = null; yenidenCiz(); });
+  $("geriAl").addEventListener("click", function () { vuruslar.pop(); yenidenCiz(); });
+  window.addEventListener("resize", boyutla);
+  boyutla();
+})();
+</script>
+</body>
+</html>

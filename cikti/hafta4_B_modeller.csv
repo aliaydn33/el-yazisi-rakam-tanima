@@ -1,0 +1,4 @@
+﻿ad,n,mnist_test_%,dok_dogrulama_%,dok_test_%,toplanan_%,sure_sn,parametre,dosya_KB,"tahmin_ms (CPU, tek goruntu, medyan)"
+MLP,5,97.54 ± 0.19,93.84 ± 0.92,93.98 ± 0.76,96.80 ± 3.03,3.0,101770,400.0,0.049
+LeNet-5 benzeri CNN,5,98.97 ± 0.07,97.83 ± 0.24,97.24 ± 0.31,100.00 ± 0.00,25.2,61706,245.3,0.403
+Derin CNN,5,99.21 ± 0.09,98.00 ± 0.40,97.67 ± 0.43,100.00 ± 0.00,153.8,241994,955.7,0.576

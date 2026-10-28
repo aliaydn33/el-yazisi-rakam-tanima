@@ -1,0 +1,1 @@
+Veri toplama sayfasindan (veri_toplama.html) inen .json dosyalarini bu klasore koyun.

@@ -1,0 +1,33 @@
+﻿deney,gercek,tahmin,sayi
+QMNIST,4,6,88
+QMNIST,6,0,70
+QMNIST,8,6,40
+QMNIST,1,7,36
+QMNIST,1,2,29
+QMNIST,3,7,23
+QMNIST,2,8,14
+QMNIST,9,7,13
+QMNIST + artirma,4,6,169
+QMNIST + artirma,8,6,51
+QMNIST + artirma,1,7,49
+QMNIST + artirma,9,4,18
+QMNIST + artirma,1,2,17
+QMNIST + artirma,8,9,16
+QMNIST + artirma,8,5,15
+QMNIST + artirma,6,5,14
+EMNIST,8,6,111
+EMNIST,1,7,74
+EMNIST,9,4,66
+EMNIST,7,2,41
+EMNIST,9,7,40
+EMNIST,6,0,21
+EMNIST,5,6,20
+EMNIST,1,2,15
+EMNIST + artirma,4,6,186
+EMNIST + artirma,8,6,69
+EMNIST + artirma,1,7,50
+EMNIST + artirma,6,0,24
+EMNIST + artirma,9,4,21
+EMNIST + artirma,9,7,13
+EMNIST + artirma,5,6,12
+EMNIST + artirma,5,3,11

@@ -1,0 +1,17 @@
+HAFTA 3 SONUCLARI
+Tarih: 2026-10-22 14:06
+Cihaz: cpu (x86_64), PyTorch 2.14.1+cu130, epoch: 10, tohum: 42
+Veri artirma ayarlari: {'dondurme_derece': 15, 'olcek': 0.15, 'kaydirma_piksel': 2, 'kalinlik': (-0.7, 0.3)}
+
+           deney  egitim_ornegi      test_kumesi  ornek  dogruluk_%  hata_sayisi  hata_orani_%  makro_F1  egitim_suresi_sn
+          QMNIST          54000       MNIST test  10000       99.10           90          0.90    0.9909                76
+          QMNIST          54000 Dokunmatik ekran  20074       97.50          502          2.50    0.9751                76
+QMNIST + artirma          54000       MNIST test  10000       99.08           92          0.92    0.9908                89
+QMNIST + artirma          54000 Dokunmatik ekran  20074       96.03          797          3.97    0.9602                89
+
+Dokunmatik veride en cok karisan rakamlar (gercek -> tahmin: sayi)
+  QMNIST            : 6->0: 99, 4->6: 82, 8->6: 44, 1->7: 33, 1->2: 25, 3->7: 19, 5->6: 16, 9->7: 14
+  QMNIST + artirma  : 4->6: 391, 1->7: 46, 1->2: 44, 8->6: 44, 3->7: 28, 6->0: 21, 9->7: 17, 5->6: 14
+
+McNemar testi (dokunmatik veri, sureklilik duzeltmeli)
+  QMNIST - QMNIST + artirma: sadece artirmasiz dogru = 454, sadece artirmali dogru = 159, ki-kare = 141.0, p = 1.60e-32

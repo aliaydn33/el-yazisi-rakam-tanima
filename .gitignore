@@ -1,0 +1,7 @@
+# buyuk dosyalar GitHub'a yuklenmez
+veri/
+modeller/
+.venv/
+__pycache__/
+# deneme kosulari
+cikti/hizli_deneme/
