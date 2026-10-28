@@ -1,6 +1,6 @@
 # Hafta 2: Kurulum ve Çalıştırma
 
-Bu hafta iki dosya çalıştırılır:
+Bu hafta iki betik çalıştırılır:
 
 | Dosya | Ne yapar | Süre (yaklaşık) |
 |---|---|---|
@@ -11,8 +11,7 @@ Ekran kartı (GPU) gerekmez, normal işlemcide çalışır.
 
 ## 1. Klasörün yeri
 
-- Zip dosyasına sağ tıklayıp **"Tümünü ayıkla"** deyin. Zip'in içine çift tıklayarak girip çalıştırmayın.
-- Klasörü **OneDrive dışında** bir yere koyun (örneğin `C:\Users\<kullanıcı>\Proje`). EMNIST indirildikten sonra klasörde yaklaşık 3 GB veri oluşur. Klasör OneDrive içindeyse bunların hepsi buluta yüklenmeye çalışılır.
+Proje klasörünü **OneDrive dışında** bir yerde tutun (örneğin `C:\Users\<kullanıcı>\Proje`). EMNIST indirildikten sonra klasörde yaklaşık 3 GB veri oluşur. Klasör OneDrive içindeyse bunların hepsi buluta yüklenmeye çalışılır.
 
 ## 2. Terminali açma
 
@@ -34,7 +33,7 @@ python --version
 python -m pip install -r requirements.txt
 ```
 
-PyTorch büyük olduğu için birkaç dakika sürebilir. Sonunda `Successfully installed ...` satırı görünür.
+PyTorch büyük olduğu için birkaç dakika sürebilir.
 
 ## 4. Çalıştırma
 
@@ -43,7 +42,7 @@ python 1_veri_hazirla.py
 python 2_ilk_cnn.py
 ```
 
-İlk komutta ilk yazının görünmesi 1-2 dakika sürebilir, çünkü PyTorch ilk açılışta yavaş yüklenir. Program çalışırken terminale yazı yazılamaz, bu normaldir.
+İlk komutta ilk yazının görünmesi 1-2 dakika sürebilir, çünkü PyTorch ilk açılışta yavaş yüklenir.
 
 ## Karşılaşılan sorunlar
 
@@ -57,4 +56,4 @@ python 2_ilk_cnn.py
 - `ozet_hafta2.txt` / `sonuclar_hafta2.csv`: model sonuçları
 - `sekil_*.png`: rapordaki şekiller
 
-`veri` ve `modeller` klasörleri büyük olduğu için `.gitignore` ile GitHub'a yüklenmez. Kod dosyalarını ve `cikti` klasörünü yükleyin.
+`veri` ve `modeller` klasörleri büyük olduğu için `.gitignore` ile depoya alınmaz.

@@ -72,4 +72,4 @@ Veri toplama için `veri_toplama.html`, çizim ekranı için `cizim.html` dosyas
 
 ## Not
 
-3. hafta raporundaki deneyler bulut ortamındaki bir bilgisayarda çalıştırılmıştı. O koşunun çıktıları `cikti/hafta3_ilk_kosu_bulut/` klasöründe duruyor. Aynı deneylerin ekip bilgisayarındaki sonuçları ve aradaki farkın açıklaması 4. hafta raporunda yer alıyor.
+3. hafta raporundaki ilk deneyler farklı bir bilgisayarda çalıştırılmıştı. O koşunun çıktıları `cikti/hafta3_ilk_kosu/` klasöründe duruyor. Aynı deneylerin ekip bilgisayarındaki sonuçları ve aradaki farkın açıklaması 4. hafta raporunda yer alıyor.

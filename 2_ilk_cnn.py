@@ -198,7 +198,7 @@ def main():
             a.imshow(d["x"][i], cmap="gray_r"); a.set_title(f"G:{y[i]} T:{p[i]}", fontsize=7)
         fig.tight_layout(); fig.savefig(os.path.join(CIKTI, "sekil_dokunmatik_hatalar.png"), dpi=200); plt.close(fig)
 
-    # --- ozet (bu dosyayi rapor icin gonderin)
+    # --- ozet
     pd.set_option("display.width", 200); pd.set_option("display.max_columns", 20)
     ozet = (f"HAFTA 2 SONUCLARI\nTarih: {time.strftime('%Y-%m-%d %H:%M')}\n"
             f"Cihaz: {cihaz} ({cihaz_adi}), PyTorch {torch.__version__}, epoch: {args.epoch}, tohum: {TOHUM}\n\n"

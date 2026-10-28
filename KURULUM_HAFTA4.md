@@ -1,56 +1,55 @@
 # Hafta 4: Çalıştırma
 
-Bu haftanın dosyaları:
-
 | Dosya | Ne yapar | Süre (yaklaşık) |
 |---|---|---|
-| `5_model_karsilastirma.py` | Veri artırma yöntemlerini tek tek dener, MLP / LeNet-5 benzeri CNN / Derin CNN'i karşılaştırır, veri kaynaklarını (QMNIST, EMNIST, ikisi birlikte) karşılaştırır. Her deney 5 tohumla yapılır. | 35-45 dk |
+| `5_model_karsilastirma.py` | Veri artırma yöntemlerini tek tek dener, MLP / LeNet-5 benzeri CNN / Derin CNN'i karşılaştırır, veri kaynaklarını (QMNIST, EMNIST, ikisi birlikte) karşılaştırır. Her deney 5 tohumla yapılır. | 45-50 dk |
 | `cizim.html` | Uygulamanın çizim ekranı: tuval, Geri al, Temizle ve modelin göreceği 28×28 görüntünün canlı önizlemesi | - |
-| `model_yapisi.py` | Modeller ve eğitim kodu (güncellendi, Derin CNN eklendi) | - |
-| `4_toplanan_veri.py` | Toplanan veriyi işler (güncellendi, 4. haftada seçilen modeli de dener) | 10 sn |
-| `testler/on_isleme_testi.py` | Çizim ekranındaki ön işlemenin Python'dakiyle aynı sonucu verdiğini test eder (Playwright gerekir, isteğe bağlı) | - |
+| `model_yapisi.py` | Modeller ve eğitim kodu (Derin CNN bu hafta eklendi) | - |
+| `4_toplanan_veri.py` | Toplanan veriyi işler (4. haftada seçilen modeli de dener) | 10 sn |
+| `testler/on_isleme_testi.py` | Çizim ekranındaki ön işlemenin Python'dakiyle aynı sonucu verdiğini test eder (Playwright gerekir) | 1 dk |
 
-## 1. Dosyaları yerleştirme
+## 1. Deneyler
 
-Zip'in içindekileri yine `hafta2_proje` klasörüne kopyalayın. Windows "aynı adlı dosya var" derse **"Hedefteki dosyaları değiştir"** seçin. `model_yapisi.py` ve `4_toplanan_veri.py` dosyalarının yeni sürümleri eskisinin yerine geçer.
-
-## 2. Asıl deneyi başlatma
-
-Bilgisayarı **şarja takın** ve uyku moduna geçmeyecek şekilde açık bırakın. Sonra terminalde şunu çalıştırın:
+Uzun sürdüğü için bilgisayar şarja takılı ve uyku moduna geçmeyecek şekilde çalıştırılmalıdır.
 
 ```
 python 5_model_karsilastirma.py
 ```
 
-Her deneyin sonucu bitince ekrana bir satır olarak yazılır. Toplam yaklaşık 70 eğitim yapılır.
+Her eğitimin sonucu bitince ekrana bir satır olarak yazılır ve `cikti/hafta4_kosular.csv` dosyasına eklenir. Betik yarıda kesilirse aynı komut tekrar çalıştırılır, biten eğitimler atlanır.
 
-Betik yarıda kesilirse aynı komutu tekrar çalıştırın. Biten deneyleri atlayıp kaldığı yerden devam eder.
+Diğer seçenekler:
+- `python 5_model_karsilastirma.py --hizli`: küçük veriyle 2-3 dakikalık deneme (çıktılar `cikti/hizli_deneme` klasörüne yazılır)
+- `python 5_model_karsilastirma.py --bolum B`: yalnızca bir bölümü çalıştırır (A, B veya C)
 
-## 3. Deney sürerken
+## 2. Çizim ekranı
 
-- **Veri toplama:** Eray ve Metehan `veri_toplama.html` dosyasını açıp 50'şer rakam çizer. İnen `.json` dosyaları `toplanan_veri` klasörüne konur.
-- **Çizim ekranı:** `cizim.html` dosyasına çift tıklayın. Tuvale bir rakam çizin, sağda modelin göreceği 28×28 görüntü belirir. Geri al ve Temizle düğmelerini deneyin.
+`cizim.html` dosyası tarayıcıda açılır. Tuvale çizilen rakamın modelin göreceği 28×28 hali sağda canlı olarak görünür.
 
-## 4. Deney bittikten sonra
+Ön işleme testi için (isteğe bağlı):
+
+```
+python -m pip install playwright
+python -m playwright install chromium
+python testler/on_isleme_testi.py
+```
+
+## 3. Toplanan veri
+
+Deneyler bittikten sonra:
 
 ```
 python 4_toplanan_veri.py
 ```
 
-Bu komut toplanan verileri işler ve 4. haftada seçilen model dahil bütün modelleri bu veride dener.
+## Çıktılar
 
-## 5. Rapor için gönderilecekler
+`cikti` klasöründe:
+- `ozet_hafta4.txt`: bütün tablolar, istatistiksel testler ve seçim kararları
+- `hafta4_kosular.csv`: her eğitimin ayrı sonucu
+- `hafta4_A_artirma.csv`, `hafta4_B_modeller.csv`, `hafta4_C_veri_kaynagi.csv`, `hafta4_rakam_bazinda.csv`
+- `hafta4_dokunmatik_kisi_ayrimi.csv`: dokunmatik verideki her kişinin doğrulama mı test mi olduğu
+- `sekil_hafta4_artirma.png`, `sekil_hafta4_modeller.png`, `sekil_hafta4_veri_kaynagi.png`, `sekil_hafta4_rakam_bazinda.png`, `sekil_hafta4_karmasiklik.png`
 
-`cikti` klasöründen:
-- `ozet_hafta4.txt`
-- `ozet_toplanan.txt`
-- `sekil_hafta4_artirma.png`
-- `sekil_hafta4_modeller.png`
-- `sekil_hafta4_veri_kaynagi.png`
-- `sekil_hafta4_rakam_bazinda.png`
-- `sekil_hafta4_karmasiklik.png`
-- `sekil_toplanan_ornekler.png`
-
-`modeller` klasöründen (5. haftada modeli tarayıcıya taşımak için gerekli):
-- `secilen_model_hafta4.pt`
-- `secilen_model_hafta4.txt`
+`modeller` klasöründe (depoya alınmaz):
+- `secilen_model_hafta4.pt`, `secilen_model_hafta4.txt`: uygulama için seçilen model (5. haftada ONNX'e çevrilecek)
