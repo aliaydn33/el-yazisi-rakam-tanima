@@ -1,0 +1,24 @@
+{
+  "secilen.onnx": {
+    "model": "LeNet-5 benzeri CNN",
+    "kisa_ad": "secilen",
+    "parametre": 61706,
+    "sayi_bicimi": "32 bit",
+    "dosya_KB": 243.7,
+    "mnist_test_%": 99.0,
+    "dokunmatik_test_%": 97.48,
+    "pytorch_ile_ayni_%": 100.0,
+    "secilen": true
+  },
+  "secilen_int8.onnx": {
+    "model": "LeNet-5 benzeri CNN",
+    "kisa_ad": "secilen",
+    "parametre": 61706,
+    "sayi_bicimi": "8 bit (int8)",
+    "dosya_KB": 76.9,
+    "mnist_test_%": 99.02,
+    "dokunmatik_test_%": 97.47,
+    "pytorch_ile_ayni_%": 99.96,
+    "secilen": true
+  }
+}
