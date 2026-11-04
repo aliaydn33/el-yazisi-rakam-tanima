@@ -1,0 +1,27 @@
+HAFTA 5 - TOPLANAN VERIDE H2 OLCUMU
+
+model                  LeNet-5 benzeri CNN (8 bit)  Derin CNN (8 bit)
+katilimci                                       20                 20
+cizim                                         1000               1000
+dogru                                          960                976
+dogruluk_%                                    96.0               97.6
+guven_araligi_%95                      94.59-97.13        96.45-98.46
+hedef_%95_saglandi_mi                         evet               evet
+en_dusuk_katilimci_%                          86.0               92.0
+medyan_katilimci_%                            98.0               98.0
+%95_alti_katilimci                               8                  3
+mouse_cizim                                    450                450
+mouse_dogruluk_%                             96.22              97.33
+touch_cizim                                    550                550
+touch_dogruluk_%                             95.82              97.82
+
+LeNet-5 benzeri CNN (8 bit) en sik hatalar: 9->5 (10), 9->3 (7), 4->9 (6), 9->2 (2), 1->7 (2), 2->7 (2), 9->8 (2), 1->4 (2)
+LeNet-5 benzeri CNN (8 bit) rakam bazinda hata sayisi: 0: 0, 1: 5, 2: 3, 3: 2, 4: 8, 5: 0, 6: 1, 7: 0, 8: 0, 9: 21
+LeNet-5 benzeri CNN (8 bit) katilimci bazinda dogruluk: K-7791: 86, K-5292: 90, K-4904: 90, K-3468: 92, K-6429: 92, K-7659: 92, K-7301: 94, K-2445: 94, K-4700: 96, K-6048: 98, K-4958: 98, K-7592: 98, K-2032: 100, K-4300: 100, K-5347: 100, K-5548: 100, K-8400: 100, K-8874: 100, K-9329: 100, K-9608: 100
+Derin CNN (8 bit) en sik hatalar: 4->6 (3), 8->9 (2), 8->6 (2), 3->7 (2), 2->1 (2), 9->5 (2), 9->2 (1), 7->2 (1)
+Derin CNN (8 bit) rakam bazinda hata sayisi: 0: 0, 1: 1, 2: 4, 3: 3, 4: 5, 5: 0, 6: 1, 7: 2, 8: 4, 9: 4
+Derin CNN (8 bit) katilimci bazinda dogruluk: K-5292: 92, K-4904: 92, K-2445: 94, K-2032: 96, K-4700: 96, K-3468: 96, K-7791: 96, K-6429: 98, K-7659: 98, K-6048: 98, K-7301: 98, K-9608: 98, K-4958: 100, K-5548: 100, K-5347: 100, K-4300: 100, K-7592: 100, K-8400: 100, K-8874: 100, K-9329: 100
+McNemar (LeNet-5 benzeri CNN (8 bit) - Derin CNN (8 bit)): yalniz birincinin dogru bildigi 11, yalniz ikincinin 27, p = 0.0150
+Uygulama modelinde 1 rakamindaki 5 hata 5 katilimcidan geliyor: K-2445 (1), K-4700 (1), K-5292 (1), K-7301 (1), K-7592 (1)
+Uygulama modelinde 4 rakamindaki 8 hata 5 katilimcidan geliyor: K-7659 (4), K-4904 (1), K-7301 (1), K-7791 (1), K-3468 (1)
+Uygulama modelinde 9 rakamindaki 21 hata 8 katilimcidan geliyor: K-7791 (5), K-5292 (4), K-6429 (4), K-2445 (2), K-4904 (2), K-3468 (2), K-4958 (1), K-7301 (1)

@@ -1,0 +1,3 @@
+﻿model,katilimci,cizim,dogru,dogruluk_%,guven_araligi_%95,hedef_%95_saglandi_mi,en_dusuk_katilimci_%,medyan_katilimci_%,%95_alti_katilimci,mouse_cizim,mouse_dogruluk_%,touch_cizim,touch_dogruluk_%
+LeNet-5 benzeri CNN (8 bit),20,1000,960,96.0,94.59-97.13,evet,86.0,98.0,8,450,96.22,550,95.82
+Derin CNN (8 bit),20,1000,976,97.6,96.45-98.46,evet,92.0,98.0,3,450,97.33,550,97.82

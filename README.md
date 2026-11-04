@@ -22,6 +22,8 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 
 **Şu anki uygulama modeli:** LeNet-5 benzeri CNN (61.706 parametre, veri artırma yok, QMNIST ile eğitildi). Uygulamada 8 bit (int8) ONNX sürümü kullanılıyor: 77 KB, dokunmatik testte %97,47 (32 bit sürümde %97,48).
 
+**Ekibin topladığı veri (20 katılımcı, 1.000 çizim, eğitimde kullanılmadı):** uygulama modeli %96,0 (%95 güven aralığı 94,6-97,1), derin CNN %97,6 (96,5-98,5). Uygulama modelinin hatalarının yarısı alt ucu sola kıvrılan 9'larda.
+
 | Ölçüt (5 tohum ortalaması) | LeNet-5 benzeri CNN | Derin CNN | MLP |
 |---|---|---|---|
 | MNIST test | %98,97 ± 0,07 | %99,21 ± 0,09 | %97,54 ± 0,19 |
@@ -38,6 +40,7 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 5_model_karsilastirma.py  4. hafta: veri artırma yöntemleri, 3 model, veri kaynağı (5 tohum)
 6_onnx_donusum.py         5. hafta: modelleri ONNX'e ve 8 bite çevirir, PyTorch ile karşılaştırır
 7_uygulama_olustur.py     5. hafta: ONNX modellerini uygulama sayfasına ekleyip index.html'i üretir
+8_h2_olcumu.py            5. hafta: ekibin topladığı veride H2 ölçümü (güven aralığı, katılımcı bazında sonuçlar)
 model_yapisi.py           Modeller (MLP, LeNet-5 benzeri CNN, Derin CNN), eğitim ve veri artırma
 ortak.py                  Ön işleme (MNIST biçimine getirme, vuruşları görüntüye çevirme)
 index.html                Uygulama: çizim, canlı tahmin, 10 rakamın olasılıkları, hız testi
@@ -47,7 +50,7 @@ veri_toplama.html         Veri toplama sayfası (aydınlatma metni, 50 rakam)
 apps_script/              Veri toplama sayfasının Google Apps Script sürümü (çizimler Drive'a kaydedilir)
 cizim.html                4. haftanın çizim ekranı (tahmin olmadan)
 testler/                  Ön işleme ve uygulama testleri (tarayıcıdaki sonuçların Python ile karşılaştırılması)
-toplanan_veri/            Ekip içinde toplanan anonim çizimler (JSON)
+toplanan_veri/            Toplanan anonim çizimler (JSON, katılımcı başına bir dosya)
 cikti/                    Raporlarda kullanılan tablolar, şekiller ve özetler
 hafta1/                   1. haftanın ön çalışma kodu
 KURULUM*.md               Her haftanın kurulum ve çalıştırma notları
@@ -67,6 +70,8 @@ python 3_emnist_artirma.py
 python 5_model_karsilastirma.py
 python 6_onnx_donusum.py
 python 7_uygulama_olustur.py
+python 4_toplanan_veri.py
+python 8_h2_olcumu.py
 ```
 
 Bütün deneyler sabit tohumla (42-46) çalışır. Aynı bilgisayarda aynı sonuçları verir.

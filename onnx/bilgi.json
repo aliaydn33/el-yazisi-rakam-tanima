@@ -20,5 +20,27 @@
     "dokunmatik_test_%": 97.47,
     "pytorch_ile_ayni_%": 99.96,
     "secilen": true
+  },
+  "derin.onnx": {
+    "model": "Derin CNN",
+    "kisa_ad": "derin",
+    "parametre": 241994,
+    "sayi_bicimi": "32 bit",
+    "dosya_KB": 946.3,
+    "mnist_test_%": 99.13,
+    "dokunmatik_test_%": 97.2,
+    "pytorch_ile_ayni_%": 100.0,
+    "secilen": false
+  },
+  "derin_int8.onnx": {
+    "model": "Derin CNN",
+    "kisa_ad": "derin",
+    "parametre": 241994,
+    "sayi_bicimi": "8 bit (int8)",
+    "dosya_KB": 256.4,
+    "mnist_test_%": 99.13,
+    "dokunmatik_test_%": 97.19,
+    "pytorch_ile_ayni_%": 99.98,
+    "secilen": false
   }
 }

@@ -1,15 +1,29 @@
 HAFTA 5 - ONNX DONUSUMU
-Tarih: 2026-11-04 21:49
+Tarih: 2026-11-04 22:47
 PyTorch 2.14.1+cu130, onnxruntime 1.31.1
 
-              model     surum     test_kumesi  ornek  dogruluk_%  pytorch_ile_ayni_tahmin_%  en_buyuk_skor_farki  dosya_KB  tahmin_ms_cpu
-LeNet-5 benzeri CNN   PyTorch      MNIST test  10000       99.00                     100.00             0.000000     245.3          0.232
-LeNet-5 benzeri CNN      ONNX      MNIST test  10000       99.00                     100.00             0.000008     243.7          0.053
-LeNet-5 benzeri CNN ONNX int8      MNIST test  10000       99.02                      99.93             0.964697      76.9          0.110
-LeNet-5 benzeri CNN   PyTorch Dokunmatik test  16087       97.48                     100.00             0.000000     245.3          0.232
-LeNet-5 benzeri CNN      ONNX Dokunmatik test  16087       97.48                     100.00             0.000008     243.7          0.053
-LeNet-5 benzeri CNN ONNX int8 Dokunmatik test  16087       97.47                      99.96             0.224220      76.9          0.110
+              model     surum             test_kumesi  ornek  dogruluk_%  pytorch_ile_ayni_tahmin_%  en_buyuk_skor_farki  dosya_KB  tahmin_ms_cpu
+LeNet-5 benzeri CNN   PyTorch              MNIST test  10000       99.00                     100.00             0.000000     245.3          0.326
+LeNet-5 benzeri CNN      ONNX              MNIST test  10000       99.00                     100.00             0.000008     243.7          0.049
+LeNet-5 benzeri CNN ONNX int8              MNIST test  10000       99.02                      99.93             0.964697      76.9          0.098
+LeNet-5 benzeri CNN   PyTorch         Dokunmatik test  16087       97.48                     100.00             0.000000     245.3          0.326
+LeNet-5 benzeri CNN      ONNX         Dokunmatik test  16087       97.48                     100.00             0.000008     243.7          0.049
+LeNet-5 benzeri CNN ONNX int8         Dokunmatik test  16087       97.47                      99.96             0.224220      76.9          0.098
+LeNet-5 benzeri CNN   PyTorch Toplanan veri (20 kişi)   1000       96.00                     100.00             0.000000     245.3          0.326
+LeNet-5 benzeri CNN      ONNX Toplanan veri (20 kişi)   1000       96.00                     100.00             0.000005     243.7          0.049
+LeNet-5 benzeri CNN ONNX int8 Toplanan veri (20 kişi)   1000       96.00                     100.00             0.194258      76.9          0.098
+          Derin CNN   PyTorch              MNIST test  10000       99.13                     100.00             0.000000     955.7          0.495
+          Derin CNN      ONNX              MNIST test  10000       99.13                     100.00             0.000010     946.3          0.100
+          Derin CNN ONNX int8              MNIST test  10000       99.13                     100.00             0.213653     256.4          0.079
+          Derin CNN   PyTorch         Dokunmatik test  16087       97.20                     100.00             0.000000     955.7          0.495
+          Derin CNN      ONNX         Dokunmatik test  16087       97.20                     100.00             0.000010     946.3          0.100
+          Derin CNN ONNX int8         Dokunmatik test  16087       97.19                      99.98             0.175807     256.4          0.079
+          Derin CNN   PyTorch Toplanan veri (20 kişi)   1000       97.60                     100.00             0.000000     955.7          0.495
+          Derin CNN      ONNX Toplanan veri (20 kişi)   1000       97.60                     100.00             0.000010     946.3          0.100
+          Derin CNN ONNX int8 Toplanan veri (20 kişi)   1000       97.60                     100.00             0.149437     256.4          0.079
 
 Uygulamaya eklenecek dosyalar:
   secilen.onnx: LeNet-5 benzeri CNN, 32 bit, 243.7 KB
   secilen_int8.onnx: LeNet-5 benzeri CNN, 8 bit (int8), 76.9 KB
+  derin.onnx: Derin CNN, 32 bit, 946.3 KB
+  derin_int8.onnx: Derin CNN, 8 bit (int8), 256.4 KB

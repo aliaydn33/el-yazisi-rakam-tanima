@@ -9,7 +9,9 @@ Uygulama sayfasinin (index.html) testi
    dogruluk olculur.
 2) Hiz: Sayfadaki "Hiz testi" dugmesine basilir. Istenirse islemci yavaslatilarak (--yavaslatma 4) orta
    seviye bir telefonun hizina yaklasilir. Bu yalnizca bir benzetimdir, gercek olcum telefonda yapilir.
-3) Internetsiz calisma: onnxruntime-web'in indirildigi adres engellenerek sayfanin yedek hesaplayiciyla
+3) Toplanan veri: 'toplanan_veri' klasorundeki cizimler (veri toplama sayfasindan) varsa vuruslari tarayicida
+   on islemeden gecirilip her modelle tahmin edilir. Bu, H2 hedefinin uygulamanin kendisinde olculmesidir.
+4) Internetsiz calisma: onnxruntime-web'in indirildigi adres engellenerek sayfanin yedek hesaplayiciyla
    calismaya devam ettigi kontrol edilir.
 
 Gereksinim: pip install playwright onnxruntime, ardindan: playwright install chromium
@@ -49,6 +51,22 @@ def test_cizimleri(n, tohum=0):
     vurus = {g_: [nokta[s] for s in g.Z_PK.values if s in nokta] for g_, g in stroke.groupby("ZGLYPH")}
     secim = glyph.sample(n=n, random_state=tohum)
     return [(vurus[r.Z_PK], int(r.ZCHARACTER)) for r in secim.itertuples() if vurus.get(r.Z_PK)]
+
+
+def toplanan_cizimler(klasor="toplanan_veri"):
+    """Veri toplama sayfasinin JSON dosyalari (4_toplanan_veri.py ile ayni okuma: ayni cizim iki kez sayilmaz)."""
+    import glob
+    cizimler, gorulen = [], set()
+    for yol in sorted(glob.glob(os.path.join(klasor, "*.json"))):
+        o = json.load(open(yol, encoding="utf-8"))
+        for orn in o.get("ornekler", []):
+            anahtar = (o["katilimci_no"], orn["sira"])
+            vurus = [[[p[0], p[1]] for p in v] for v in orn["vuruslar"] if len(v)]
+            if anahtar in gorulen or not vurus:
+                continue
+            gorulen.add(anahtar)
+            cizimler.append((vurus, int(orn["rakam"]), o["katilimci_no"]))
+    return cizimler
 
 
 def yerel_ort(klasor):
@@ -113,6 +131,27 @@ def main():
                     "dogruluk_tarayici_on_isleme_%": round(float((uctan.argmax(1) == y).mean()) * 100, 2),
                     "sure_s": round(time.time() - t0, 1)})
                 print(satirlar[-1], flush=True)
+
+        # toplanan veri: vuruslar tarayicida on islenir ve tahmin edilir (uctan uca)
+        toplanan, toplanan_satir = toplanan_cizimler(), []
+        if toplanan:
+            tv = [v for v, _, _ in toplanan]; ty = np.array([e for _, e, _ in toplanan])
+            tk = np.array([k for _, _, k in toplanan])
+            t28 = sayfa.evaluate("v => v.map(c => Uygulama.cizimden28(c))", tv)
+            for model in modeller:
+                for m in (["ort", "js"] if motor == "ort" and model == modeller[0] else [motor]):
+                    skor = np.array(sayfa.evaluate(SIRAYLA, [t28, m, model]), np.float32)
+                    dogru = skor.argmax(1) == ty
+                    kisi = pd.Series(dogru).groupby(tk).mean() * 100
+                    toplanan_satir.append({
+                        "model_dosyasi": model, "hesaplama": "onnxruntime-web" if m == "ort" else "yedek hesaplayici",
+                        "katilimci": len(kisi), "cizim": len(ty), "dogru": int(dogru.sum()),
+                        "dogruluk_%": round(float(dogru.mean()) * 100, 2),
+                        "en_dusuk_katilimci_%": round(float(kisi.min()), 1),
+                        "medyan_katilimci_%": round(float(kisi.median()), 1)})
+                    print(toplanan_satir[-1], flush=True)
+            pd.DataFrame(toplanan_satir).to_csv(os.path.join(CIKTI, "hafta5_tarayici_toplanan.csv"), index=False,
+                                                encoding="utf-8-sig")
 
         # hiz testi: sayfadaki dugmeyle, her model ve hesaplama yolu icin
         cdp = baglam.new_cdp_session(sayfa)

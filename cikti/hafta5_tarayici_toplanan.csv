@@ -1,0 +1,6 @@
+﻿model_dosyasi,hesaplama,katilimci,cizim,dogru,dogruluk_%,en_dusuk_katilimci_%,medyan_katilimci_%
+secilen_int8.onnx,onnxruntime-web,20,1000,961,96.1,88.0,98.0
+secilen_int8.onnx,yedek hesaplayici,20,1000,961,96.1,88.0,98.0
+secilen.onnx,onnxruntime-web,20,1000,961,96.1,88.0,98.0
+derin_int8.onnx,onnxruntime-web,20,1000,975,97.5,90.0,98.0
+derin.onnx,onnxruntime-web,20,1000,975,97.5,90.0,98.0
