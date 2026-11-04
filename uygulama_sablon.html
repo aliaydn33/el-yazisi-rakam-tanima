@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rakam Tanıma</title>
+<!--
+  El Yazısı Rakam Tanıma - uygulamanın 5. hafta sürümü (41.GRUP)
+
+  Bu dosya bir şablondur. 7_uygulama_olustur.py, onnx/ klasöründeki modelleri aşağıdaki "model-verisi"
+  bölümüne ekleyerek index.html dosyasını üretir. Böylece uygulama tek bir dosyadan oluşur ve sunucu
+  gerektirmez: tahmin kullanıcının tarayıcısında yapılır.
+
+  Tahmin iki yoldan biriyle yapılır:
+    1) onnxruntime-web (Microsoft): ONNX modellerini WebAssembly ile çalıştıran kütüphane. İnternetten yüklenir.
+    2) Yedek hesaplayıcı: aynı .onnx dosyasını okuyup katmanları düz JavaScript ile hesaplayan kısa bir kod
+       (bu dosyanın içinde). onnxruntime-web yüklenemezse (internet yoksa ya da tarayıcı desteklemiyorsa)
+       uygulama bununla çalışmaya devam eder.
+-->
+<style>
+  :root {
+    --zemin: #F5F6F8; --kart: #FFFFFF; --yazi: #1C2430; --ikincil: #5A6472; --cizgi: #D9DDE3;
+    --vurgu: #2F4B7C; --vurgu-acik: #C9D3E3; --uyari-zemin: #FFF7ED; --uyari-cizgi: #FED7AA; --uyari-yazi: #9A3412;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--zemin); color: var(--yazi); -webkit-text-size-adjust: 100%;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  body { padding: 16px; overscroll-behavior: none; }
+  main { max-width: 820px; margin: 0 auto; }
+  header { margin-bottom: 12px; }
+  header h1 { font-size: 1.15rem; margin: 0; }
+  header p { margin: 2px 0 0; font-size: .8rem; color: var(--ikincil); }
+  .izgara { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 12px; align-items: start; }
+  .kart { background: var(--kart); border: 1px solid var(--cizgi); border-radius: 12px; padding: 16px; }
+  h2 { font-size: .95rem; margin: 0 0 8px; }
+
+  /* kare tuval: aspect-ratio desteklemeyen eski tarayicilar icin padding yontemi */
+  .tuval-kutu { position: relative; width: 100%; max-width: 380px; margin: 0 auto; }
+  .tuval-kutu::before { content: ""; display: block; padding-top: 100%; }
+  #tuval { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; background: #fff;
+    border: 2px dashed var(--cizgi); border-radius: 12px; touch-action: none; cursor: crosshair;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  .ipucu { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center;
+    color: #9AA3AF; font-size: .9rem; pointer-events: none; text-align: center; padding: 0 24px; }
+  .dugmeler { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px auto 0; max-width: 380px; }
+  button, select { font: inherit; font-size: .95rem; min-height: 44px; padding: 0 14px; border-radius: 10px;
+    border: 1px solid var(--cizgi); background: var(--kart); color: var(--yazi); }
+  button { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.ana { background: var(--vurgu); border-color: var(--vurgu); color: #fff; }
+  select { width: 100%; padding: 0 10px; }
+
+  /* tahmin */
+  .sonuc { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .rakam { display: flex; align-items: center; gap: 14px; }
+  #rakam { font-size: 4.2rem; line-height: 1; font-weight: 700; width: 64px; text-align: center; color: #B8BEC7;
+    font-variant-numeric: tabular-nums; }
+  #rakam.var { color: var(--vurgu); }
+  .rakam p { margin: 0; font-size: .85rem; color: var(--ikincil); line-height: 1.5; }
+  #guven { font-size: 1.05rem; color: var(--yazi); font-weight: 600; }
+  .cubuklar { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; align-items: end; height: 112px; }
+  .cubuk { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; }
+  .cubuk .kap { position: relative; flex: 1; width: 100%; }
+  .cubuk i { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 22px;
+    background: var(--vurgu-acik); border-radius: 4px 4px 0 0; height: 0; min-height: 2px; transition: height .12s ease-out; }
+  .cubuk.en i { background: var(--vurgu); }
+  .cubuk span { font-size: .62rem; color: var(--ikincil); height: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .cubuk b { font-size: .8rem; font-weight: 600; margin-top: 3px; }
+  .alt { display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: center; }
+  #onizleme { width: 84px; height: 84px; display: block; image-rendering: pixelated; background: #000; border-radius: 6px; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; font-size: .8rem; margin: 0; }
+  dt { color: var(--ikincil); } dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* model ve olcum */
+  details { margin-top: 12px; }
+  summary { cursor: pointer; font-weight: 600; font-size: .95rem; padding: 2px 0; }
+  .ayarlar { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  label { display: block; font-size: .8rem; color: var(--ikincil); margin-bottom: 4px; }
+  .durum { font-size: .8rem; color: var(--ikincil); margin: 10px 0 0; line-height: 1.45; }
+  .durum.uyari { background: var(--uyari-zemin); border: 1px solid var(--uyari-cizgi); color: var(--uyari-yazi);
+    border-radius: 8px; padding: 8px 10px; }
+  .model-bilgi { margin-top: 10px; }
+  .olcum-dugmeleri { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: 12px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 6px 8px; border-bottom: 1px solid var(--cizgi); text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--ikincil); font-weight: 600; }
+  .not { font-size: .75rem; color: var(--ikincil); margin: 8px 0 0; line-height: 1.45; }
+  #kopyaMetni { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }
+
+  @media (max-width: 680px) {
+    .izgara { grid-template-columns: 1fr; }
+    /* telefonda tahminin tuvalin hemen altinda gorunmesi icin tuval ekran yuksekliginin yarisini gecmez */
+    .tuval-kutu, .dugmeler { max-width: 380px; max-width: min(380px, 50vh); }
+    .cubuklar { height: 96px; }
+    #rakam { font-size: 3.4rem; width: 52px; }
+    .ayarlar { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Rakam Tanıma</h1>
+    <p>El Yazısı Rakam Tanıma Projesi · 41.GRUP · 5. hafta sürümü</p>
+  </header>
+  <noscript><p class="durum uyari">Bu sayfa JavaScript ile çalışır. Dosya önizlemesi olarak açıldıysa çalışmaz, bağlantı bir tarayıcıda açılmalıdır.</p></noscript>
+
+  <div class="izgara">
+    <section class="kart">
+      <div class="tuval-kutu">
+        <canvas id="tuval" aria-label="Çizim alanı"></canvas>
+        <div id="ipucu" class="ipucu">Buraya 0-9 arasında bir rakam çizin</div>
+      </div>
+      <div class="dugmeler">
+        <button id="geriAl" disabled>Geri al</button>
+        <button id="temizle" disabled>Temizle</button>
+      </div>
+    </section>
+
+    <section class="kart sonuc" aria-live="polite">
+      <div class="rakam">
+        <div id="rakam">?</div>
+        <p><span id="guven">Çizim bekleniyor</span><br><span id="ikinci"></span></p>
+      </div>
+      <div class="cubuklar" id="cubuklar" role="img" aria-label="10 rakamın olasılıkları"></div>
+      <div class="alt">
+        <canvas id="onizleme" width="28" height="28" aria-label="Modelin gördüğü 28×28 görüntü"></canvas>
+        <dl>
+          <dt>Ön işleme</dt><dd id="sureOn">-</dd>
+          <dt>Model</dt><dd id="sureModel">-</dd>
+          <dt>Toplam</dt><dd id="sureToplam">-</dd>
+          <dt>Hesaplayan</dt><dd id="hesaplayan">-</dd>
+        </dl>
+      </div>
+    </section>
+  </div>
+
+  <section class="kart" style="margin-top:12px">
+    <details id="ayrinti">
+      <summary>Model ve hız ölçümü</summary>
+      <div class="ayarlar">
+        <div><label for="modelSecim">Model</label><select id="modelSecim"></select></div>
+        <div><label for="motorSecim">Hesaplama</label>
+          <select id="motorSecim">
+            <option value="ort">onnxruntime-web (WebAssembly)</option>
+            <option value="js">Yedek hesaplayıcı (JavaScript)</option>
+          </select></div>
+      </div>
+      <p id="motorDurum" class="durum">onnxruntime-web yükleniyor…</p>
+      <dl class="model-bilgi" id="modelBilgi"></dl>
+      <div class="olcum-dugmeleri">
+        <button id="hizTesti" class="ana">Hız testi</button>
+        <button id="kopyala" disabled>Sonucu kopyala</button>
+      </div>
+      <p class="not">Hız testi tuvaldeki çizimle yapılır, tuval boşsa örnek bir çizim kullanılır. Ön işleme ve model ayrı ayrı
+        10 kez ısındırıldıktan sonra 100 kez çalıştırılır. Kopyalanan sonuca tarayıcı ve ekran bilgisi de eklenir.</p>
+      <div id="olcumSonucu"></div>
+      <textarea id="kopyaMetni" readonly aria-hidden="true" tabindex="-1"></textarea>
+    </details>
+  </section>
+</main>
+
+<script id="model-verisi" type="application/json">/*MODELLER*/</script>
+
+<script>
+/* ============================================================================================
+   ON ISLEME (Python'daki ortak.py ile ayni adimlar)
+     1) vuruslariCiz      : vuruslar -> en uzun kenari 200 piksel, 26 piksel kalinlikta cizim (siyah zemin, beyaz)
+     2) mnistBicimi       : kirp -> en-boy oranini koruyarak 20x20'ye kucult (Lanczos) -> 28x28 ortasina koy
+                            -> agirlik merkezine gore kaydir (dogrusal ara degerleme)
+   Sonuc: 784 elemanli Uint8Array (0 = zemin, 255 = murekkep). Model girdisi = deger / 255.
+   ============================================================================================ */
+var OnIsleme = (function () {
+  "use strict";
+
+  function vuruslariCiz(vuruslar, kenar, kalinlik, bosluk, kaydir) {
+    kenar = kenar || 200; kalinlik = kalinlik || 26; bosluk = (bosluk === undefined) ? 30 : bosluk;
+    kaydir = (kaydir === undefined) ? 0 : kaydir;
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    vuruslar.forEach(function (v) { v.forEach(function (p) {
+      if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
+    }); });
+    var olcek = kenar / Math.max(x1 - x0, y1 - y0, 1e-6), boyut = Math.round(kenar + 2 * bosluk);
+    var c = document.createElement("canvas"); c.width = c.height = boyut;
+    var g = c.getContext("2d", { willReadFrequently: true });
+    g.fillStyle = "#000"; g.fillRect(0, 0, boyut, boyut);
+    g.strokeStyle = g.fillStyle = "#fff"; g.lineWidth = kalinlik; g.lineCap = "round"; g.lineJoin = "round";
+    g.translate(kaydir, kaydir);
+    vuruslar.forEach(function (v) {
+      var p = v.map(function (q) { return [(q[0] - x0) * olcek + bosluk, (q[1] - y0) * olcek + bosluk]; });
+      if (p.length === 1) { g.beginPath(); g.arc(p[0][0], p[0][1], kalinlik / 2, 0, 2 * Math.PI); g.fill(); return; }
+      g.beginPath(); g.moveTo(p[0][0], p[0][1]);
+      for (var i = 1; i < p.length; i++) g.lineTo(p[i][0], p[i][1]);
+      g.stroke();
+    });
+    var veri = g.getImageData(0, 0, boyut, boyut).data, gri = new Float32Array(boyut * boyut);
+    for (var i = 0; i < gri.length; i++) gri[i] = veri[i * 4];
+    return { gri: gri, w: boyut, h: boyut };
+  }
+
+  // Pillow'un Image.resize(LANCZOS) yontemi: once yatay, sonra dikey gecis; aradaki goruntu 8 bit
+  function sinc(x) { if (x === 0) return 1; x *= Math.PI; return Math.sin(x) / x; }
+  function lanczos(x) { return (x > -3 && x < 3) ? sinc(x) * sinc(x / 3) : 0; }
+  function katsayilar(girdi, cikti) {
+    var olcek = girdi / cikti, fo = Math.max(olcek, 1), destek = 3 * fo, sonuc = [];
+    for (var xx = 0; xx < cikti; xx++) {
+      var merkez = (xx + 0.5) * olcek, xmin = Math.max(Math.floor(merkez - destek + 0.5), 0);
+      var xmax = Math.min(Math.floor(merkez + destek + 0.5), girdi), w = [], top = 0;
+      for (var x = xmin; x < xmax; x++) { var k = lanczos((x - merkez + 0.5) / fo); w.push(k); top += k; }
+      sonuc.push({ bas: xmin, w: w.map(function (k) { return top ? k / top : 0; }) });
+    }
+    return sonuc;
+  }
+  function sekiz(v) { v = Math.round(v); return v < 0 ? 0 : (v > 255 ? 255 : v); }
+  function boyutlandir(src, w, h, yw, yh) {
+    var kx = katsayilar(w, yw), ara = new Float32Array(yw * h), out = new Float32Array(yw * yh);
+    for (var y = 0; y < h; y++) for (var xx = 0; xx < yw; xx++) {
+      var s = 0, k = kx[xx]; for (var i = 0; i < k.w.length; i++) s += src[y * w + k.bas + i] * k.w[i];
+      ara[y * yw + xx] = sekiz(s);
+    }
+    var ky = katsayilar(h, yh);
+    for (var yy = 0; yy < yh; yy++) for (var x = 0; x < yw; x++) {
+      var t = 0, q = ky[yy]; for (var j = 0; j < q.w.length; j++) t += ara[(q.bas + j) * yw + x] * q.w[j];
+      out[yy * yw + x] = sekiz(t);
+    }
+    return out;
+  }
+  function pyRound(x) {                       // Python'un round(): tam yarida cift sayiya yuvarlar
+    var f = Math.floor(x), d = x - f;
+    if (Math.abs(d - 0.5) < 1e-12) return (f % 2 === 0) ? f : f + 1;
+    return Math.round(x);
+  }
+
+  function mnistBicimi(g) {
+    var w = g.w, h = g.h, a = g.gri, r0 = -1, r1 = -1, c0 = -1, c1 = -1, x, y;
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) if (a[y * w + x] > 30) {
+      if (r0 < 0) r0 = y; r1 = y; if (c0 < 0 || x < c0) c0 = x; if (x > c1) c1 = x;
+    }
+    var kutu = new Float32Array(784);
+    if (r0 < 0) return new Uint8Array(784);
+    var kh = r1 - r0 + 1, kw = c1 - c0 + 1, kirpik = new Float32Array(kh * kw);
+    for (y = 0; y < kh; y++) for (x = 0; x < kw; x++) kirpik[y * kw + x] = a[(r0 + y) * w + c0 + x];
+    var olcek = 20 / Math.max(kh, kw), yw = Math.max(1, pyRound(kw * olcek)), yh = Math.max(1, pyRound(kh * olcek));
+    var kucuk = boyutlandir(kirpik, kw, kh, yw, yh);
+    var ust = Math.floor((28 - yh) / 2), sol = Math.floor((28 - yw) / 2);
+    for (y = 0; y < yh; y++) for (x = 0; x < yw; x++) kutu[(ust + y) * 28 + sol + x] = kucuk[y * yw + x];
+    // agirlik merkezi
+    var top = 0, sy = 0, sx = 0;
+    for (y = 0; y < 28; y++) for (x = 0; x < 28; x++) { var v = kutu[y * 28 + x]; top += v; sy += y * v; sx += x * v; }
+    var cy = sy / top, cx = sx / top;
+    var dy = Math.min(Math.max(14 - cy, -ust), 28 - (ust + yh)), dx = Math.min(Math.max(14 - cx, -sol), 28 - (sol + yw));
+    // scipy.ndimage.shift(order=1, mode="constant") ile ayni: kaynak = hedef - kayma, disarisi 0
+    var out = new Uint8Array(784);
+    for (y = 0; y < 28; y++) for (x = 0; x < 28; x++) {
+      var ky = y - dy, kx = x - dx;
+      if (ky < -1e-9 || kx < -1e-9 || ky > 27 + 1e-9 || kx > 27 + 1e-9) continue;
+      var y0 = Math.min(Math.floor(ky), 27), x0 = Math.min(Math.floor(kx), 27), fy = ky - y0, fx = kx - x0;
+      var y1 = Math.min(y0 + 1, 27), x1 = Math.min(x0 + 1, 27);
+      var d = kutu[y0 * 28 + x0] * (1 - fy) * (1 - fx) + kutu[y0 * 28 + x1] * (1 - fy) * fx +
+              kutu[y1 * 28 + x0] * fy * (1 - fx) + kutu[y1 * 28 + x1] * fy * fx;
+      out[y * 28 + x] = d <= 0 ? 0 : (d >= 255 ? 255 : Math.floor(d));
+    }
+    return out;
+  }
+
+  return { vuruslariCiz: vuruslariCiz, mnistBicimi: mnistBicimi,
+           cizimden28: function (vuruslar) { return mnistBicimi(vuruslariCiz(vuruslar)); } };
+})();
+
+/* ============================================================================================
+   YEDEK HESAPLAYICI: .onnx dosyasini okuyup modeli duz JavaScript ile calistirir
+   ONNX dosyasi protobuf bicimindedir: her alan "alan numarasi + tur" bilgisinden sonra degeriyle yazilir.
+   Burada yalnizca modellerimizde gecen katmanlar yazildi: Conv, Relu, MaxPool, Flatten, Gemm ve
+   8 bit modellerdeki QuantizeLinear / DequantizeLinear (ayrica BatchNormalization, Reshape, Add, MatMul).
+   ============================================================================================ */
+var YedekHesaplayici = (function () {
+  "use strict";
+
+  // ---------- protobuf okuma ----------
+  function varint(b, k) {                      // 64 bitlik tam sayi; negatifler ikiye tumleyen ile yazilir
+    var lo = 0, hi = 0, x, i;
+    for (i = 0; i < 4; i++) { x = b[k.p++]; lo |= (x & 0x7f) << (7 * i); if (x < 128) return lo >>> 0; }
+    x = b[k.p++]; lo |= (x & 0x0f) << 28; hi = (x & 0x7f) >> 4;
+    if (x >= 128) for (i = 0; i < 5; i++) { x = b[k.p++]; hi |= (x & 0x7f) << (7 * i + 3); if (x < 128) break; }
+    lo >>>= 0; hi >>>= 0;
+    if (hi >= 0x80000000) { lo = (~lo + 1) >>> 0; hi = (~hi + (lo === 0 ? 1 : 0)) >>> 0; return -(hi * 4294967296 + lo); }
+    return hi * 4294967296 + lo;
+  }
+  function alanlar(b, bas, son, fn) {
+    var k = { p: bas };
+    while (k.p < son) {
+      var a = varint(b, k), no = Math.floor(a / 8), tur = a % 8, d;
+      if (tur === 0) d = varint(b, k);
+      else if (tur === 2) { var n = varint(b, k); d = { bas: k.p, son: k.p + n }; k.p += n; }
+      else if (tur === 5) { d = k.p; k.p += 4; }
+      else if (tur === 1) { d = k.p; k.p += 8; }
+      else throw new Error("ONNX dosyası okunamadı (alan türü " + tur + ")");
+      fn(no, tur, d);
+    }
+  }
+  function metin(b, d) {
+    var s = ""; for (var i = d.bas; i < d.son; i++) s += String.fromCharCode(b[i]);
+    try { return decodeURIComponent(escape(s)); } catch (h) { return s; }
+  }
+  function tamSayilar(b, tur, d, liste) {      // tekrarlanan tam sayi alani (paketli ya da tek tek)
+    if (tur === 0) liste.push(d);
+    else { var k = { p: d.bas }; while (k.p < d.son) liste.push(varint(b, k)); }
+  }
+  function ondaliklar(b, dv, tur, d, liste) {
+    if (tur === 5) liste.push(dv.getFloat32(d, true));
+    else for (var p = d.bas; p < d.son; p += 4) liste.push(dv.getFloat32(p, true));
+  }
+
+  // TensorProto -> { s: boyutlar, v: Float32Array, t: veri turu }
+  function tensorOku(b, dv, bas, son) {
+    var t = { ad: "", s: [], t: 1 }, ham = null, f = [], i32 = [], i64 = [];
+    alanlar(b, bas, son, function (no, tur, d) {
+      if (no === 1) tamSayilar(b, tur, d, t.s);
+      else if (no === 2) t.t = d;
+      else if (no === 4) ondaliklar(b, dv, tur, d, f);
+      else if (no === 5) tamSayilar(b, tur, d, i32);
+      else if (no === 7) tamSayilar(b, tur, d, i64);
+      else if (no === 8) t.ad = metin(b, d);
+      else if (no === 9) ham = b.slice(d.bas, d.son);   // kopya: hizali yeni bellek
+    });
+    var n = t.s.reduce(function (a, c) { return a * c; }, 1), v = new Float32Array(n), i;
+    if (ham) {
+      var hb = ham.buffer, hv = new DataView(hb);
+      if (t.t === 1) v.set(new Float32Array(hb));
+      else if (t.t === 2) v.set(new Uint8Array(hb));
+      else if (t.t === 3) v.set(new Int8Array(hb));
+      else if (t.t === 4) for (i = 0; i < n; i++) v[i] = hv.getUint16(2 * i, true);
+      else if (t.t === 5) for (i = 0; i < n; i++) v[i] = hv.getInt16(2 * i, true);
+      else if (t.t === 6) for (i = 0; i < n; i++) v[i] = hv.getInt32(4 * i, true);
+      else if (t.t === 7) for (i = 0; i < n; i++) v[i] = hv.getInt32(8 * i + 4, true) * 4294967296 + hv.getUint32(8 * i, true);
+      else if (t.t === 11) for (i = 0; i < n; i++) v[i] = hv.getFloat64(8 * i, true);
+      else throw new Error("Desteklenmeyen veri türü: " + t.t);
+    } else {
+      var kaynak = t.t === 1 ? f : (t.t === 7 ? i64 : i32);
+      for (i = 0; i < n; i++) v[i] = kaynak[i] || 0;
+    }
+    t.v = v;
+    return t;
+  }
+
+  function ozellikOku(b, dv, bas, son) {        // AttributeProto
+    var o = { ad: "", tur: 0, f: 0, i: 0, s: "", t: null, fs: [], is: [] };
+    alanlar(b, bas, son, function (no, tur, d) {
+      if (no === 1) o.ad = metin(b, d);
+      else if (no === 2) o.f = dv.getFloat32(d, true);
+      else if (no === 3) o.i = d;
+      else if (no === 4) o.s = metin(b, d);
+      else if (no === 5) o.t = tensorOku(b, dv, d.bas, d.son);
+      else if (no === 7) ondaliklar(b, dv, tur, d, o.fs);
+      else if (no === 8) tamSayilar(b, tur, d, o.is);
+      else if (no === 20) o.tur = d;
+    });
+    var deger = { 1: o.f, 2: o.i, 3: o.s, 4: o.t, 6: o.fs, 7: o.is }[o.tur];
+    if (deger === undefined) deger = o.is.length ? o.is : (o.fs.length ? o.fs : (o.t || o.i || o.f));
+    return { ad: o.ad, deger: deger };
+  }
+
+  function modelOku(b) {
+    var dv = new DataView(b.buffer, b.byteOffset, b.byteLength), cizge = null;
+    alanlar(b, 0, b.length, function (no, tur, d) { if (no === 7) cizge = d; });
+    if (!cizge) throw new Error("ONNX dosyasında model bulunamadı");
+    var m = { dugumler: [], sabitler: {}, girisler: [], cikislar: [] };
+    function degerAdi(d) { var ad = ""; alanlar(b, d.bas, d.son, function (no, tur, x) { if (no === 1) ad = metin(b, x); }); return ad; }
+    alanlar(b, cizge.bas, cizge.son, function (no, tur, d) {
+      if (no === 1) {
+        var n = { giris: [], cikis: [], tur: "", oz: {} };
+        alanlar(b, d.bas, d.son, function (no2, tur2, d2) {
+          if (no2 === 1) n.giris.push(metin(b, d2));
+          else if (no2 === 2) n.cikis.push(metin(b, d2));
+          else if (no2 === 4) n.tur = metin(b, d2);
+          else if (no2 === 5) { var o = ozellikOku(b, dv, d2.bas, d2.son); n.oz[o.ad] = o.deger; }
+        });
+        m.dugumler.push(n);
+      } else if (no === 5) { var t = tensorOku(b, dv, d.bas, d.son); m.sabitler[t.ad] = t; }
+      else if (no === 11) m.girisler.push(degerAdi(d));
+      else if (no === 12) m.cikislar.push(degerAdi(d));
+    });
+    m.girisler = m.girisler.filter(function (g) { return !(g in m.sabitler); });
+    return m;
+  }
+
+  // ---------- katmanlar ----------
+  function carpim(a) { return a.reduce(function (x, y) { return x * y; }, 1); }
+  function yuvarla(x) {                         // tam yarida cift sayiya (ONNX QuantizeLinear kurali)
+    var f = Math.floor(x), d = x - f;
+    return d > 0.5 ? f + 1 : (d < 0.5 ? f : (f % 2 === 0 ? f : f + 1));
+  }
+  function eksenBilgisi(x, olcek, eksen) {      // kanal bazinda olcek varsa her elemanin kanalini bulmak icin
+    if (olcek.v.length === 1) return null;
+    if (eksen < 0) eksen += x.s.length;
+    return { ic: carpim(x.s.slice(eksen + 1)), n: x.s[eksen] };
+  }
+
+  var K = {
+    Conv: function (g, oz) {
+      var x = g[0], w = g[1], b = g[2], N = x.s[0], C = x.s[1], H = x.s[2], W = x.s[3];
+      var M = w.s[0], CG = w.s[1], KH = w.s[2], KW = w.s[3], grup = oz.group || 1;
+      var ad = oz.strides || [1, 1], pd = oz.pads || [0, 0, 0, 0], dl = oz.dilations || [1, 1];
+      var OH = Math.floor((H + pd[0] + pd[2] - dl[0] * (KH - 1) - 1) / ad[0]) + 1;
+      var OW = Math.floor((W + pd[1] + pd[3] - dl[1] * (KW - 1) - 1) / ad[1]) + 1;
+      var y = new Float32Array(N * M * OH * OW), mg = M / grup, xv = x.v, wv = w.v;
+      for (var n = 0; n < N; n++) for (var m = 0; m < M; m++) {
+        var gi = Math.floor(m / mg), sapma = b ? b.v[m] : 0, yb = (n * M + m) * OH * OW;
+        for (var oh = 0; oh < OH; oh++) for (var ow = 0; ow < OW; ow++) {
+          var top = sapma;
+          for (var c = 0; c < CG; c++) {
+            var xb = (n * C + gi * CG + c) * H * W, wb = (m * CG + c) * KH * KW;
+            for (var kh = 0; kh < KH; kh++) {
+              var ih = oh * ad[0] - pd[0] + kh * dl[0];
+              if (ih < 0 || ih >= H) continue;
+              for (var kw = 0; kw < KW; kw++) {
+                var iw = ow * ad[1] - pd[1] + kw * dl[1];
+                if (iw >= 0 && iw < W) top += xv[xb + ih * W + iw] * wv[wb + kh * KW + kw];
+              }
+            }
+          }
+          y[yb + oh * OW + ow] = top;
+        }
+      }
+      return { s: [N, M, OH, OW], v: y };
+    },
+    MaxPool: function (g, oz) {
+      var x = g[0], N = x.s[0], C = x.s[1], H = x.s[2], W = x.s[3], k = oz.kernel_shape;
+      var ad = oz.strides || [1, 1], pd = oz.pads || [0, 0, 0, 0], yuk = oz.ceil_mode ? Math.ceil : Math.floor;
+      var OH = yuk((H + pd[0] + pd[2] - k[0]) / ad[0]) + 1, OW = yuk((W + pd[1] + pd[3] - k[1]) / ad[1]) + 1;
+      var y = new Float32Array(N * C * OH * OW);
+      for (var nc = 0; nc < N * C; nc++) for (var oh = 0; oh < OH; oh++) for (var ow = 0; ow < OW; ow++) {
+        var en = -Infinity;
+        for (var a = 0; a < k[0]; a++) for (var b = 0; b < k[1]; b++) {
+          var ih = oh * ad[0] - pd[0] + a, iw = ow * ad[1] - pd[1] + b;
+          if (ih >= 0 && ih < H && iw >= 0 && iw < W) { var d = x.v[(nc * H + ih) * W + iw]; if (d > en) en = d; }
+        }
+        y[(nc * OH + oh) * OW + ow] = en;
+      }
+      return { s: [N, C, OH, OW], v: y };
+    },
+    Relu: function (g) {
+      var y = new Float32Array(g[0].v.length);
+      for (var i = 0; i < y.length; i++) y[i] = g[0].v[i] > 0 ? g[0].v[i] : 0;
+      return { s: g[0].s, v: y };
+    },
+    Flatten: function (g, oz) {
+      var e = oz.axis === undefined ? 1 : oz.axis; if (e < 0) e += g[0].s.length;
+      return { s: [carpim(g[0].s.slice(0, e)), carpim(g[0].s.slice(e))], v: g[0].v };
+    },
+    Reshape: function (g) {
+      var hedef = Array.prototype.slice.call(g[1].v), bos = -1, n = g[0].v.length;
+      hedef = hedef.map(function (d, i) { if (d === 0) return g[0].s[i]; if (d === -1) bos = i; return d; });
+      if (bos >= 0) hedef[bos] = n / carpim(hedef.filter(function (d, i) { return i !== bos; }));
+      return { s: hedef, v: g[0].v };
+    },
+    Gemm: function (g, oz) {
+      var A = g[0], B = g[1], C = g[2], tA = oz.transA || 0, tB = oz.transB || 0;
+      var al = oz.alpha === undefined ? 1 : oz.alpha, be = oz.beta === undefined ? 1 : oz.beta;
+      var M = tA ? A.s[1] : A.s[0], Kk = tA ? A.s[0] : A.s[1], N = tB ? B.s[0] : B.s[1], y = new Float32Array(M * N);
+      for (var i = 0; i < M; i++) for (var j = 0; j < N; j++) {
+        var top = 0;
+        for (var k = 0; k < Kk; k++) top += (tA ? A.v[k * M + i] : A.v[i * Kk + k]) * (tB ? B.v[j * Kk + k] : B.v[k * N + j]);
+        var c = 0;
+        if (C) c = C.v.length === 1 ? C.v[0] : (C.v.length === N ? C.v[j] : (C.v.length === M ? C.v[i] : C.v[i * N + j]));
+        y[i * N + j] = al * top + be * c;
+      }
+      return { s: [M, N], v: y };
+    },
+    MatMul: function (g) { return K.Gemm(g, {}); },
+    Add: function (g) {
+      var a = g[0], b = g[1], y = new Float32Array(a.v.length), L = b.v.length;
+      for (var i = 0; i < y.length; i++) y[i] = a.v[i] + b.v[i % L];
+      return { s: a.s, v: y };
+    },
+    BatchNormalization: function (g, oz) {
+      var x = g[0], C = x.s[1], ic = carpim(x.s.slice(2)), eps = oz.epsilon === undefined ? 1e-5 : oz.epsilon;
+      var y = new Float32Array(x.v.length);
+      for (var i = 0; i < y.length; i++) {
+        var c = Math.floor(i / ic) % C;
+        y[i] = (x.v[i] - g[3].v[c]) / Math.sqrt(g[4].v[c] + eps) * g[1].v[c] + g[2].v[c];
+      }
+      return { s: x.s, v: y };
+    },
+    QuantizeLinear: function (g, oz) {
+      var x = g[0], s = g[1], z = g[2], tur = z ? z.t : 2, e = eksenBilgisi(x, s, oz.axis === undefined ? 1 : oz.axis);
+      var alt = { 2: 0, 3: -128, 4: 0, 5: -32768 }[tur], ust = { 2: 255, 3: 127, 4: 65535, 5: 32767 }[tur];
+      var y = new Float32Array(x.v.length);
+      for (var i = 0; i < y.length; i++) {
+        var c = e ? Math.floor(i / e.ic) % e.n : 0;
+        var q = yuvarla(Math.fround(x.v[i] / s.v[c])) + (z ? z.v[c] : 0);
+        y[i] = q < alt ? alt : (q > ust ? ust : q);
+      }
+      return { s: x.s, v: y, t: tur };
+    },
+    DequantizeLinear: function (g, oz) {
+      var x = g[0], s = g[1], z = g[2], e = eksenBilgisi(x, s, oz.axis === undefined ? 1 : oz.axis);
+      var y = new Float32Array(x.v.length);
+      for (var i = 0; i < y.length; i++) { var c = e ? Math.floor(i / e.ic) % e.n : 0; y[i] = (x.v[i] - (z ? z.v[c] : 0)) * s.v[c]; }
+      return { s: x.s, v: y };
+    },
+    Identity: function (g) { return g[0]; },
+    Dropout: function (g) { return g[0]; },
+    Constant: function (g, oz) { return oz.value; }
+  };
+
+  function Model(bayt) {
+    var m = modelOku(bayt), sabit = m.sabitler;
+    m.dugumler.forEach(function (n) {
+      if (!K[n.tur]) throw new Error("Yedek hesaplayıcıda olmayan katman: " + n.tur);
+    });
+    // girdiye bagli olmayan dugumler (or. agirliklarin 8 bitten geri cevrilmesi) bir kez, yuklenirken hesaplanir
+    this.dugumler = m.dugumler.filter(function (n) {
+      var sabitMi = n.giris.every(function (g) { return g === "" || g in sabit; });
+      if (sabitMi) sabit[n.cikis[0]] = K[n.tur](n.giris.map(function (g) { return sabit[g]; }), n.oz);
+      return !sabitMi;
+    });
+    this.sabit = sabit; this.giris = m.girisler[0]; this.cikis = m.cikislar[0];
+  }
+  Model.prototype.calistir = function (x) {      // x: 784 elemanli Float32Array (0-1 arasi)
+    var sabit = this.sabit, d = {};
+    d[this.giris] = { s: [1, 1, 28, 28], v: x };
+    this.dugumler.forEach(function (n) {
+      var g = n.giris.map(function (a) { return a === "" ? null : (d[a] || sabit[a]); });
+      d[n.cikis[0]] = K[n.tur](g, n.oz);
+    });
+    return d[this.cikis].v;
+  };
+  return { Model: Model };
+})();
+
+/* ============================================================================================
+   UYGULAMA: modellerin yuklenmesi, cizim, canli tahmin ve hiz testi
+   ============================================================================================ */
+(function () {
+  "use strict";
+  var ORT_SURUM = "1.20.1";
+  var ORT_ADRES = "https://cdn.jsdelivr.net/npm/onnxruntime-web@" + ORT_SURUM + "/dist/";
+  var $ = function (id) { return document.getElementById(id); };
+  var baslangic = performance.now();
+
+  function sayi(x, b) { return x.toFixed(b === undefined ? 1 : b).replace(".", ","); }
+  function ms(x) { return x < 10 ? sayi(x, 2) + " ms" : sayi(x, 1) + " ms"; }
+
+  // ---------- modeller ----------
+  var MODELLER = {}, SIRA = [], modelAdi = null;
+  try {
+    var ham = JSON.parse($("model-verisi").textContent);
+    SIRA = Object.keys(ham).sort(function (a, b) {          // once uygulama modeli, once 8 bit
+      var pa = (ham[a].bilgi.secilen ? 0 : 2) + (/int8/.test(a) ? 0 : 1), pb = (ham[b].bilgi.secilen ? 0 : 2) + (/int8/.test(b) ? 0 : 1);
+      return pa - pb;
+    });
+    SIRA.forEach(function (ad) {
+      var ikili = atob(ham[ad].veri), bayt = new Uint8Array(ikili.length);
+      for (var i = 0; i < ikili.length; i++) bayt[i] = ikili.charCodeAt(i);
+      MODELLER[ad] = { bilgi: ham[ad].bilgi, bayt: bayt, js: null, ort: null };
+    });
+    modelAdi = SIRA[0];
+  } catch (h) {
+    $("motorDurum").className = "durum uyari";
+    $("motorDurum").textContent = "Model bulunamadı. Bu dosya şablondur, 7_uygulama_olustur.py ile oluşturulan index.html açılmalıdır.";
+  }
+
+  SIRA.forEach(function (ad) {
+    var b = MODELLER[ad].bilgi, o = document.createElement("option");
+    o.value = ad;
+    o.textContent = b.model + " · " + (/int8/.test(ad) ? "8 bit" : "32 bit") + " · " + Math.round(b.dosya_KB) + " KB";
+    $("modelSecim").appendChild(o);
+  });
+
+  function modelBilgisiniGoster() {
+    if (!modelAdi) return;
+    var b = MODELLER[modelAdi].bilgi;
+    $("modelBilgi").innerHTML =
+      "<dt>Parametre sayısı</dt><dd>" + b.parametre.toLocaleString("tr-TR") + "</dd>" +
+      "<dt>Sayı biçimi</dt><dd>" + b.sayi_bicimi + "</dd>" +
+      "<dt>Dosya boyutu</dt><dd>" + sayi(b.dosya_KB) + " KB</dd>" +
+      "<dt>Dokunmatik test doğruluğu</dt><dd>%" + sayi(b["dokunmatik_test_%"], 2) + "</dd>" +
+      "<dt>MNIST test doğruluğu</dt><dd>%" + sayi(b["mnist_test_%"], 2) + "</dd>";
+  }
+
+  function jsModeli(ad) {
+    var m = MODELLER[ad];
+    if (!m.js) { var t0 = performance.now(); m.js = new YedekHesaplayici.Model(m.bayt); m.jsYukleme = performance.now() - t0; }
+    return m.js;
+  }
+
+  // ---------- onnxruntime-web ----------
+  var ort = null, ortDurum = "yukleniyor", ortHata = "", ortYuklemeSuresi = null;
+  function zamanAsimi(soz, sure, mesaj) {
+    return new Promise(function (coz, reddet) {
+      var z = setTimeout(function () { reddet(new Error(mesaj)); }, sure);
+      soz.then(function (d) { clearTimeout(z); coz(d); }, function (h) { clearTimeout(z); reddet(h); });
+    });
+  }
+  function ortKutuphanesi() {
+    return new Promise(function (coz, reddet) {
+      if (window.ort) return coz(window.ort);
+      var s = document.createElement("script");
+      s.src = ORT_ADRES + "ort.wasm.min.js"; s.async = true;
+      s.onload = function () { window.ort ? coz(window.ort) : reddet(new Error("kütüphane açılamadı")); };
+      s.onerror = function () { reddet(new Error("kütüphane indirilemedi")); };
+      document.head.appendChild(s);
+    });
+  }
+  function ortOturumu(ad) {
+    var m = MODELLER[ad];
+    if (!m.ort) m.ort = ort.InferenceSession.create(m.bayt.slice(), { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
+    return m.ort;
+  }
+  if (typeof WebAssembly !== "object") { ortDurum = "yok"; ortHata = "tarayıcı WebAssembly desteklemiyor"; }
+  var ortHazir = ortDurum === "yok" ? Promise.reject(new Error(ortHata)) :
+    zamanAsimi(ortKutuphanesi(), 20000, "kütüphane 20 saniyede yüklenemedi").then(function (k) {
+      ort = k;
+      ort.env.wasm.numThreads = 1; ort.env.wasm.proxy = false; ort.env.wasm.wasmPaths = ORT_ADRES;
+      ort.env.logLevel = "error";
+      return zamanAsimi(ortOturumu(modelAdi), 40000, "çalışma dosyası 40 saniyede yüklenemedi");
+    }).then(function () {
+      ortDurum = "hazir"; ortYuklemeSuresi = performance.now() - baslangic;
+    });
+  ortHazir.catch(function (h) {
+    ortDurum = "yok"; ortHata = ortHata || (h && h.message) || String(h);
+  }).then(function () { motorDurumunuGoster(); tahminIste(); });
+
+  function etkinMotor() { return ($("motorSecim").value === "ort" && ortDurum === "hazir") ? "ort" : "js"; }
+  function motorAdi(m) { return m === "ort" ? "onnxruntime-web " + ORT_SURUM : "Yedek hesaplayıcı"; }
+  function motorDurumunuGoster() {
+    var d = $("motorDurum"), secim = $("motorSecim").value;
+    d.className = "durum";
+    if (secim === "js") d.textContent = "Tahminler bu sayfadaki JavaScript koduyla yapılıyor (internet gerekmez).";
+    else if (ortDurum === "hazir") d.textContent = "onnxruntime-web " + ORT_SURUM + " hazır (WebAssembly, tek iş parçacığı). " +
+      "İlk yükleme " + sayi(ortYuklemeSuresi / 1000, 1) + " sn sürdü.";
+    else if (ortDurum === "yukleniyor") d.textContent = "onnxruntime-web yükleniyor… Bu sırada tahminler yedek hesaplayıcıyla yapılıyor.";
+    else { d.className = "durum uyari"; d.textContent = "onnxruntime-web yüklenemedi (" + ortHata + "). Tahminler yedek hesaplayıcıyla yapılıyor."; }
+  }
+
+  // tek bir 28x28 goruntu icin 10 sinifin skorlarini dondurur
+  function modeliCalistir(g28, motor, ad) {
+    ad = ad || modelAdi;
+    var x = new Float32Array(784);
+    for (var i = 0; i < 784; i++) x[i] = g28[i] / 255;
+    if (motor === "ort") {
+      return ortOturumu(ad).then(function (o) {
+        var f = {}; f[o.inputNames[0]] = new ort.Tensor("float32", x, [1, 1, 28, 28]);
+        return o.run(f).then(function (r) { return r[o.outputNames[0]].data; });
+      });
+    }
+    try { return Promise.resolve(jsModeli(ad).calistir(x)); } catch (h) { return Promise.reject(h); }
+  }
+  function softmax(s) {
+    var en = -Infinity, top = 0, p = [], i;
+    for (i = 0; i < s.length; i++) if (s[i] > en) en = s[i];
+    for (i = 0; i < s.length; i++) { p.push(Math.exp(s[i] - en)); top += p[i]; }
+    return p.map(function (v) { return v / top; });
+  }
+
+  // ---------- sonuc ekrani ----------
+  for (var r = 0; r < 10; r++) {
+    var c = document.createElement("div"); c.className = "cubuk";
+    c.innerHTML = '<span></span><div class="kap"><i></i></div><b>' + r + "</b>";
+    $("cubuklar").appendChild(c);
+  }
+  function sonucuGoster(p, sOn, sModel, motor) {
+    var cub = $("cubuklar").children, i;
+    if (!p) {
+      $("rakam").textContent = "?"; $("rakam").className = ""; $("guven").textContent = "Çizim bekleniyor"; $("ikinci").textContent = "";
+      for (i = 0; i < 10; i++) { cub[i].className = "cubuk"; cub[i].children[0].textContent = ""; cub[i].children[1].firstChild.style.height = "0"; }
+      $("sureOn").textContent = $("sureModel").textContent = $("sureToplam").textContent = $("hesaplayan").textContent = "-";
+      return;
+    }
+    var sira = p.map(function (v, k) { return k; }).sort(function (a, b) { return p[b] - p[a]; }), en = sira[0];
+    $("rakam").textContent = en; $("rakam").className = "var";
+    $("guven").textContent = "Güven: %" + sayi(p[en] * 100);
+    $("ikinci").textContent = p[sira[1]] >= 0.01 ? "İkinci tahmin: " + sira[1] + " (%" + sayi(p[sira[1]] * 100) + ")" : "";
+    for (i = 0; i < 10; i++) {
+      cub[i].className = i === en ? "cubuk en" : "cubuk";
+      cub[i].children[0].textContent = p[i] >= 0.01 ? Math.round(p[i] * 100) : "";
+      cub[i].children[1].firstChild.style.height = (p[i] * 100) + "%";
+    }
+    $("cubuklar").setAttribute("aria-label", "En olası rakam " + en + ", güven yüzde " + Math.round(p[en] * 100));
+    $("sureOn").textContent = ms(sOn); $("sureModel").textContent = ms(sModel); $("sureToplam").textContent = ms(sOn + sModel);
+    $("hesaplayan").textContent = motor === "ort" ? "onnxruntime-web" : "Yedek hesaplayıcı";
+  }
+  var onz = $("onizleme").getContext("2d");
+  function onizlemeCiz(g) {
+    var img = onz.createImageData(28, 28);
+    for (var i = 0; i < 784; i++) { var v = g ? g[i] : 0; img.data[4 * i] = img.data[4 * i + 1] = img.data[4 * i + 2] = v; img.data[4 * i + 3] = 255; }
+    onz.putImageData(img, 0, 0);
+  }
+
+  // ---------- canli tahmin: cizim degistikce, bir onceki tahmin bitince yenisi yapilir ----------
+  var vuruslar = [], istek = false, calisiyor = false, olcumSuruyor = false;
+  function tahminIste() {
+    istek = true;
+    if (!calisiyor) { calisiyor = true; requestAnimationFrame(tahminYap); }
+  }
+  function tahminYap() {
+    if (!istek || !modelAdi || olcumSuruyor) { calisiyor = false; return; }
+    istek = false;
+    if (!vuruslar.length) { onizlemeCiz(null); sonucuGoster(null); calisiyor = false; return; }
+    var t0 = performance.now(), g = OnIsleme.cizimden28(vuruslar), t1 = performance.now(), motor = etkinMotor();
+    onizlemeCiz(g);
+    modeliCalistir(g, motor).then(function (skor) {
+      var t2 = performance.now();
+      if (vuruslar.length) sonucuGoster(softmax(skor), t1 - t0, t2 - t1, motor);
+    }, function (h) {
+      $("motorDurum").className = "durum uyari"; $("motorDurum").textContent = "Tahmin yapılamadı: " + (h && h.message || h);
+    }).then(function () {
+      if (istek) requestAnimationFrame(tahminYap); else calisiyor = false;
+    });
+  }
+
+  // ---------- tuval ----------
+  var tuval = $("tuval"), ctx = tuval.getContext("2d"), aktif = null, sonGenislik = 0;
+  function boyutla() {
+    var r = tuval.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (!r.width) return;
+    if (sonGenislik && Math.abs(r.width - sonGenislik) > 0.5 && vuruslar.length) {   // ekran donerse cizimi olcekle
+      var k = r.width / sonGenislik;
+      vuruslar.forEach(function (v) { v.forEach(function (p) { p[0] *= k; p[1] *= k; }); });
+    }
+    sonGenislik = r.width;
+    tuval.width = Math.round(r.width * dpr); tuval.height = Math.round(r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    yenidenCiz();
+  }
+  function kalemAyari() {
+    ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = ctx.fillStyle = "#111";
+    ctx.lineWidth = Math.max(6, tuval.getBoundingClientRect().width * 0.055);
+  }
+  function yenidenCiz() {
+    var r = tuval.getBoundingClientRect();
+    ctx.clearRect(0, 0, r.width, r.height); kalemAyari();
+    vuruslar.forEach(function (n) {
+      if (n.length === 1) { ctx.beginPath(); ctx.arc(n[0][0], n[0][1], ctx.lineWidth / 2, 0, 2 * Math.PI); ctx.fill(); return; }
+      ctx.beginPath(); ctx.moveTo(n[0][0], n[0][1]);
+      for (var i = 1; i < n.length; i++) ctx.lineTo(n[i][0], n[i][1]);
+      ctx.stroke();
+    });
+    dugmeler(); tahminIste();
+  }
+  function dugmeler() {
+    var bos = vuruslar.length === 0;
+    $("geriAl").disabled = bos; $("temizle").disabled = bos;
+    $("ipucu").style.display = bos ? "flex" : "none";
+  }
+  function nokta(e) { var r = tuval.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+  tuval.addEventListener("pointerdown", function (e) {
+    if (aktif !== null) return;
+    e.preventDefault(); try { tuval.setPointerCapture(e.pointerId); } catch (h) { } aktif = e.pointerId;
+    vuruslar.push([nokta(e)]); yenidenCiz();
+  });
+  tuval.addEventListener("pointermove", function (e) {
+    if (e.pointerId !== aktif) return;
+    e.preventDefault();
+    var v = vuruslar[vuruslar.length - 1], olaylar = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
+    kalemAyari();
+    olaylar.forEach(function (o) {
+      var p = nokta(o), s = v[v.length - 1];
+      if (p[0] !== s[0] || p[1] !== s[1]) { ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); v.push(p); }
+    });
+    tahminIste();
+  });
+  function bitti(e) { if (e.pointerId === aktif) { aktif = null; dugmeler(); tahminIste(); } }
+  tuval.addEventListener("pointerup", bitti);
+  tuval.addEventListener("pointercancel", bitti);
+  // dokunmatik ekranda tuval uzerinde kaydirma, yakinlastirma ve uzun basinca acilan menuyu engelle
+  ["touchstart", "touchmove", "touchend"].forEach(function (t) {
+    tuval.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false });
+  });
+  document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
+  $("temizle").addEventListener("click", function () { vuruslar = []; aktif = null; yenidenCiz(); });
+  $("geriAl").addEventListener("click", function () { vuruslar.pop(); yenidenCiz(); });
+  window.addEventListener("resize", function () {
+    if (Math.abs(tuval.getBoundingClientRect().width - sonGenislik) > 0.5) boyutla();
+  });
+
+  $("modelSecim").addEventListener("change", function () {
+    modelAdi = this.value; modelBilgisiniGoster(); $("olcumSonucu").innerHTML = ""; $("kopyala").disabled = true; tahminIste();
+  });
+  $("motorSecim").addEventListener("change", function () { motorDurumunuGoster(); tahminIste(); });
+
+  // ---------- hiz testi ----------
+  function ornekCizim() {                        // tuval bossa kullanilan "2" rakami (tuval boyutuna gore)
+    var w = tuval.getBoundingClientRect().width / 300, v = [];
+    for (var a = -Math.PI; a <= 0.4; a += 0.08) v.push([150 + 60 * Math.cos(a), 110 + 60 * Math.sin(a)]);
+    for (var t = 0.1; t <= 1; t += 0.1) v.push([205 - 115 * t, 133 + 117 * t]);
+    for (var u = 0.1; u <= 1; u += 0.1) v.push([90 + 130 * u, 250]);
+    return [v.map(function (p) { return [p[0] * w, p[1] * w]; })];
+  }
+  function istatistik(s) {
+    var d = s.slice().sort(function (a, b) { return a - b; });
+    return { ort: s.reduce(function (a, b) { return a + b; }, 0) / s.length, med: d[Math.floor(d.length / 2)],
+             p95: d[Math.min(d.length - 1, Math.ceil(d.length * 0.95) - 1)] };
+  }
+  function sirali(n, is) {                       // is() bir Promise dondurur; n kez arka arkaya calistirir, sureleri toplar
+    var sureler = [], i = 0;
+    return new Promise(function (coz, reddet) {
+      (function adim() {
+        if (i >= n) return coz(sureler);
+        var t0 = performance.now();
+        Promise.resolve(is()).then(function () { sureler.push(performance.now() - t0); i++; adim(); }, reddet);
+      })();
+    });
+  }
+  function bekle(t) { return new Promise(function (c) { setTimeout(c, t); }); }
+
+  var sonOlcum = "";
+  $("hizTesti").addEventListener("click", function () {
+    if (olcumSuruyor || !modelAdi) return;
+    if (!vuruslar.length) { vuruslar = ornekCizim(); yenidenCiz(); }
+    olcumSuruyor = true; $("hizTesti").disabled = true; $("kopyala").disabled = true;
+    $("olcumSonucu").innerHTML = '<p class="durum">Ölçülüyor…</p>';
+    var cizim = JSON.parse(JSON.stringify(vuruslar)), motor = etkinMotor(), ad = modelAdi, g = OnIsleme.cizimden28(cizim);
+    var sonuc = {};
+    bekle(50).then(function () {
+      return sirali(10, function () { OnIsleme.cizimden28(cizim); });
+    }).then(function () { return sirali(100, function () { OnIsleme.cizimden28(cizim); }); })
+      .then(function (s) { sonuc.on = istatistik(s); return bekle(20); })
+      .then(function () { return sirali(10, function () { return modeliCalistir(g, motor, ad); }); })
+      .then(function () { return sirali(100, function () { return modeliCalistir(g, motor, ad); }); })
+      .then(function (s) {
+        sonuc.model = istatistik(s);
+        return modeliCalistir(g, motor, ad);
+      }).then(function (skor) {
+        var p = softmax(skor), en = p.indexOf(Math.max.apply(null, p)), b = MODELLER[ad].bilgi;
+        var top = sonuc.on.ort + sonuc.model.ort;
+        var satir = function (ad2, x) { return "<tr><td>" + ad2 + "</td><td>" + ms(x.ort) + "</td><td>" + ms(x.med) + "</td><td>" + ms(x.p95) + "</td></tr>"; };
+        $("olcumSonucu").innerHTML =
+          "<table><tr><th>100 tekrar</th><th>Ortalama</th><th>Medyan</th><th>En yavaş %5</th></tr>" +
+          satir("Ön işleme", sonuc.on) + satir("Model", sonuc.model) +
+          "<tr><td><b>Toplam</b></td><td><b>" + ms(top) + "</b></td><td></td><td></td></tr></table>" +
+          '<p class="not">' + b.model + ", " + (/int8/.test(ad) ? "8 bit" : "32 bit") + " · " + motorAdi(motor) +
+          " · tahmin: " + en + " (%" + sayi(p[en] * 100) + ")</p>";
+        var tarih = new Date(), iki = function (n) { return (n < 10 ? "0" : "") + n; };
+        sonOlcum = [
+          "Rakam Tanıma - hız testi (5. hafta sürümü)",
+          "Tarih: " + tarih.getFullYear() + "-" + iki(tarih.getMonth() + 1) + "-" + iki(tarih.getDate()) + " " + iki(tarih.getHours()) + ":" + iki(tarih.getMinutes()),
+          "Model: " + b.model + ", " + (/int8/.test(ad) ? "8 bit" : "32 bit") + ", " + sayi(b.dosya_KB) + " KB",
+          "Hesaplama: " + motorAdi(motor),
+          "Ön işleme (ms): ortalama " + sayi(sonuc.on.ort, 2) + ", medyan " + sayi(sonuc.on.med, 2) + ", en yavaş %5 " + sayi(sonuc.on.p95, 2),
+          "Model (ms): ortalama " + sayi(sonuc.model.ort, 2) + ", medyan " + sayi(sonuc.model.med, 2) + ", en yavaş %5 " + sayi(sonuc.model.p95, 2),
+          "Toplam (ms): ortalama " + sayi(top, 2),
+          "onnxruntime-web ilk yükleme (sn): " + (ortYuklemeSuresi ? sayi(ortYuklemeSuresi / 1000, 2) : "-"),
+          "Tarayıcı: " + navigator.userAgent,
+          "Ekran: " + screen.width + "x" + screen.height + ", piksel oranı " + (window.devicePixelRatio || 1) +
+            ", işlemci çekirdeği " + (navigator.hardwareConcurrency || "-")
+        ].join("\n");
+        $("kopyala").disabled = false;
+      }).catch(function (h) {
+        $("olcumSonucu").innerHTML = '<p class="durum uyari">Ölçüm yapılamadı: ' + (h && h.message || h) + "</p>";
+      }).then(function () { olcumSuruyor = false; $("hizTesti").disabled = false; tahminIste(); });
+  });
+  $("kopyala").addEventListener("click", function () {
+    var dugme = this, alan = $("kopyaMetni");
+    function tamam() { dugme.textContent = "Kopyalandı"; setTimeout(function () { dugme.textContent = "Sonucu kopyala"; }, 1800); }
+    function eskiYol() {
+      alan.value = sonOlcum; alan.select(); alan.setSelectionRange(0, sonOlcum.length);
+      try { document.execCommand("copy"); tamam(); } catch (h) { dugme.textContent = "Kopyalanamadı"; }
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(sonOlcum).then(tamam, eskiYol);
+    else eskiYol();
+  });
+
+  // ---------- baslat ----------
+  if (window.matchMedia && window.matchMedia("(min-width: 681px)").matches) $("ayrinti").open = true;
+  modelBilgisiniGoster(); motorDurumunuGoster(); boyutla(); onizlemeCiz(null);
+
+  // test betiginin (testler/uygulama_testi.py) kullandigi giris noktasi
+  window.Uygulama = {
+    modeller: SIRA, hazir: ortHazir.then(function () { return "ort"; }, function () { return "js"; }),
+    cizimden28: function (v) { return Array.prototype.slice.call(OnIsleme.cizimden28(v)); },
+    skorlar: function (g28, motor, ad) { return modeliCalistir(g28, motor, ad).then(function (s) { return Array.prototype.slice.call(s); }); },
+    ortDurum: function () { return ortDurum; }
+  };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+﻿islemci_yavaslatma,model_dosyasi,hesaplama,on_isleme_ort_ms,model_ort_ms,model_medyan_ms,model_p95_ms,toplam_ort_ms
+1.0,secilen_int8.onnx,onnxruntime-web,1.55,0.24,0.2,0.4,1.79
+1.0,secilen_int8.onnx,yedek hesaplayici,1.56,2.48,2.3,4.0,4.04
+1.0,secilen.onnx,onnxruntime-web,1.65,0.1,0.1,0.2,1.75
+1.0,secilen.onnx,yedek hesaplayici,1.88,2.79,2.9,4.1,4.68
+4.0,secilen_int8.onnx,onnxruntime-web,7.44,0.91,0.9,1.9,8.35
+4.0,secilen_int8.onnx,yedek hesaplayici,7.07,11.1,10.1,14.7,18.1
+4.0,secilen.onnx,onnxruntime-web,7.22,0.5,0.2,1.5,7.71
+4.0,secilen.onnx,yedek hesaplayici,7.56,10.9,9.3,17.1,18.4

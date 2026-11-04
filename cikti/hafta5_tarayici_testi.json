@@ -1,0 +1,14 @@
+{
+  "tarih": "2026-11-04 21:50",
+  "tarayici": "Chromium 141.0.7390.37",
+  "cizim_sayisi": 500,
+  "on_isleme_ayni_piksel_%": 78.57,
+  "on_isleme_en_buyuk_fark": 144,
+  "sayfa_hatalari": [],
+  "internetsiz": {
+    "onnxruntime_web": "js",
+    "yedek_hesaplayici_tahmin": 1,
+    "gercek_etiket": 1,
+    "durum_mesaji": "onnxruntime-web yüklenemedi (kütüphane indirilemedi). Tahminler yedek hesaplayıcıyla yapılıyor."
+  }
+}

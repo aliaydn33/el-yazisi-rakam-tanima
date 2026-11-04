@@ -1,0 +1,5 @@
+﻿model_dosyasi,hesaplama,cizim,python_onnx_ile_ayni_tahmin_%,en_buyuk_skor_farki,dogruluk_python_on_isleme_%,dogruluk_tarayici_on_isleme_%,sure_s
+secilen_int8.onnx,onnxruntime-web,500,100.0,3e-06,98.4,98.6,4.2
+secilen_int8.onnx,yedek hesaplayici,500,100.0,0.048316,98.4,98.6,6.2
+secilen.onnx,onnxruntime-web,500,100.0,7e-06,98.4,98.4,3.9
+secilen.onnx,yedek hesaplayici,500,100.0,6e-06,98.4,98.4,5.9

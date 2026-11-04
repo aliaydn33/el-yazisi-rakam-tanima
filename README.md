@@ -4,7 +4,9 @@ Fırat Üniversitesi Bilgisayar Mühendisliği, Bilgisayar Mühendisliği Tasar�
 
 Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek zamanlı olarak tanıyan bir web uygulaması geliştiriyoruz. Projenin temel mühendislik problemi şu: Taranmış kâğıt görüntüleriyle (MNIST) eğitilen modeller, ekrana çizilen rakamlarda aynı başarıyı gösteremiyor. Literatürde buna veri dağılımı kayması deniyor.
 
-## Durum (4. hafta sonu)
+**Uygulama:** https://aliaydn33.github.io/el-yazisi-rakam-tanima/ (çizdiğiniz rakamı tarayıcıda tanır, sunucuya bir şey gönderilmez)
+
+## Durum (5. hafta sonu)
 
 | Hafta | İş | Durum |
 |---|---|---|
@@ -12,13 +14,13 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 | 2 | Veri setleri (QMNIST, EMNIST-Digits, dokunmatik ekran verisi), ön işleme, ilk CNN | Tamamlandı |
 | 3 | Veri artırma, veri toplama sayfası | Tamamlandı |
 | 4 | Model karşılaştırması (5 tohum, istatistiksel testler), EMNIST deneyleri, çizim ekranı | Tamamlandı |
-| 5 | Modelin tarayıcıya taşınması (ONNX) ve canlı tahmin | Planlandı |
+| 5 | Modelin tarayıcıya taşınması (ONNX), canlı tahmin, uygulamanın ilk sürümü, Drive'a kaydeden veri toplama | Tamamlandı |
 | 6 | "Rakam değil" uyarısı, Grad-CAM | Planlandı |
 | 7 | FastAPI sunucu, PWA | Planlandı |
 | 8 | Kullanıcı testi (SUS), istatistiksel karşılaştırma | Planlandı |
 | 9 | Final, demo | Planlandı |
 
-**Şu anki uygulama modeli:** LeNet-5 benzeri CNN (61.706 parametre, veri artırma yok, QMNIST ile eğitildi).
+**Şu anki uygulama modeli:** LeNet-5 benzeri CNN (61.706 parametre, veri artırma yok, QMNIST ile eğitildi). Uygulamada 8 bit (int8) ONNX sürümü kullanılıyor: 77 KB, dokunmatik testte %97,47 (32 bit sürümde %97,48).
 
 | Ölçüt (5 tohum ortalaması) | LeNet-5 benzeri CNN | Derin CNN | MLP |
 |---|---|---|---|
@@ -34,11 +36,17 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 3_emnist_artirma.py       3. hafta: EMNIST ve veri artırma deneyleri (D1-D4)
 4_toplanan_veri.py        Veri toplama sayfasından gelen dosyaları işler, modelleri bu veride dener
 5_model_karsilastirma.py  4. hafta: veri artırma yöntemleri, 3 model, veri kaynağı (5 tohum)
+6_onnx_donusum.py         5. hafta: modelleri ONNX'e ve 8 bite çevirir, PyTorch ile karşılaştırır
+7_uygulama_olustur.py     5. hafta: ONNX modellerini uygulama sayfasına ekleyip index.html'i üretir
 model_yapisi.py           Modeller (MLP, LeNet-5 benzeri CNN, Derin CNN), eğitim ve veri artırma
 ortak.py                  Ön işleme (MNIST biçimine getirme, vuruşları görüntüye çevirme)
-veri_toplama.html         Veri toplama sayfası (aydınlatma metni, 50 rakam, JSON dışa aktarma)
-cizim.html                Uygulamanın çizim ekranı (tuval, geri al, temizle, 28×28 önizleme)
-testler/                  Çizim ekranındaki ön işlemenin Python ile tutarlılık testi
+index.html                Uygulama: çizim, canlı tahmin, 10 rakamın olasılıkları, hız testi
+uygulama_sablon.html      index.html'in kaynağı (modeller eklenmeden önceki hali)
+onnx/                     Uygulamada kullanılan ONNX modelleri
+veri_toplama.html         Veri toplama sayfası (aydınlatma metni, 50 rakam)
+apps_script/              Veri toplama sayfasının Google Apps Script sürümü (çizimler Drive'a kaydedilir)
+cizim.html                4. haftanın çizim ekranı (tahmin olmadan)
+testler/                  Ön işleme ve uygulama testleri (tarayıcıdaki sonuçların Python ile karşılaştırılması)
 toplanan_veri/            Ekip içinde toplanan anonim çizimler (JSON)
 cikti/                    Raporlarda kullanılan tablolar, şekiller ve özetler
 hafta1/                   1. haftanın ön çalışma kodu
@@ -57,11 +65,13 @@ python 1_veri_hazirla.py
 python 2_ilk_cnn.py
 python 3_emnist_artirma.py
 python 5_model_karsilastirma.py
+python 6_onnx_donusum.py
+python 7_uygulama_olustur.py
 ```
 
 Bütün deneyler sabit tohumla (42-46) çalışır. Aynı bilgisayarda aynı sonuçları verir.
 
-Veri toplama için `veri_toplama.html`, çizim ekranı için `cizim.html` dosyasını tarayıcıda açmanız yeterli. İki sayfa da sunucu gerektirmez.
+Uygulama için `index.html` dosyasını tarayıcıda açmanız yeterli. Tahmin internetten yüklenen onnxruntime-web ile yapılır. İnternet yoksa sayfa aynı ONNX modelini kendi içindeki JavaScript koduyla çalıştırır. Veri toplama sayfasının Drive'a kaydeden sürümünün kurulumu `KURULUM_VERI_TOPLAMA.md` dosyasında anlatılıyor.
 
 ## Veri setleri
 

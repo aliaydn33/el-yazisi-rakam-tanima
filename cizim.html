@@ -10,9 +10,9 @@
     --vurgu: #2F4B7C; --vurgu-koyu: #22385E;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--zemin); color: var(--yazi);
+  html, body { margin: 0; background: var(--zemin); color: var(--yazi); -webkit-text-size-adjust: 100%;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-  body { padding: 16px; }
+  body { padding: 16px; overscroll-behavior: none; }
   main { max-width: 760px; margin: 0 auto; }
   header { margin-bottom: 12px; }
   header h1 { font-size: 1.15rem; margin: 0; }
@@ -21,14 +21,18 @@
   @media (max-width: 620px) { .izgara { grid-template-columns: 1fr; } }
   .kart { background: var(--kart); border: 1px solid var(--cizgi); border-radius: 12px; padding: 16px; }
   h2 { font-size: .95rem; margin: 0 0 8px; }
-  .tuval-kutu { position: relative; width: 100%; max-width: 380px; margin: 0 auto; aspect-ratio: 1 / 1; }
-  #tuval { width: 100%; height: 100%; display: block; background: #fff; border: 2px dashed var(--cizgi);
-    border-radius: 12px; touch-action: none; cursor: crosshair; }
-  .ipucu { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  /* kare tuval: aspect-ratio desteklemeyen eski tarayicilar icin padding yontemi */
+  .tuval-kutu { position: relative; width: 100%; max-width: 380px; margin: 0 auto; }
+  .tuval-kutu::before { content: ""; display: block; padding-top: 100%; }
+  #tuval { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; background: #fff;
+    border: 2px dashed var(--cizgi); border-radius: 12px; touch-action: none; cursor: crosshair;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  .ipucu { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center;
     color: #9AA3AF; font-size: .9rem; pointer-events: none; text-align: center; padding: 0 24px; }
   .dugmeler { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px auto 0; max-width: 380px; }
   button { font: inherit; font-size: .95rem; min-height: 44px; padding: 0 16px; border-radius: 10px;
-    border: 1px solid var(--cizgi); background: var(--kart); color: var(--yazi); cursor: pointer; }
+    border: 1px solid var(--cizgi); background: var(--kart); color: var(--yazi); cursor: pointer;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   button:disabled { opacity: .45; cursor: not-allowed; }
   #onizleme { width: 168px; height: 168px; display: block; margin: 0 auto; image-rendering: pixelated;
     background: #000; border-radius: 6px; }
@@ -46,6 +50,8 @@
     <h1>Rakam Çizim Ekranı</h1>
     <p>El Yazısı Rakam Tanıma Projesi · 41.GRUP · 4. hafta sürümü (canlı tahmin 5. haftada eklenecek)</p>
   </header>
+  <noscript><p style="background:#FFF7ED;border:1px solid #FED7AA;color:#9A3412;border-radius:10px;padding:10px 12px">
+    Bu sayfa JavaScript ile çalışır. Dosya önizlemesi olarak açıldıysa çalışmaz, bağlantı bir tarayıcıda açılmalıdır.</p></noscript>
   <div class="izgara">
     <section class="kart">
       <div class="tuval-kutu">
@@ -184,10 +190,17 @@ var OnIsleme = (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
   var tuval = $("tuval"), ctx = tuval.getContext("2d"), onz = $("onizleme").getContext("2d");
-  var vuruslar = [], aktif = null, bekleyen = false;
+  var vuruslar = [], aktif = null, bekleyen = false, sonGenislik = 0;
 
   function boyutla() {
     var r = tuval.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (!r.width) return;
+    // ekran dondurulup tuval boyu degisirse mevcut cizimi yeni boyuta olcekle
+    if (sonGenislik && Math.abs(r.width - sonGenislik) > 0.5 && vuruslar.length) {
+      var k = r.width / sonGenislik;
+      vuruslar.forEach(function (v) { v.forEach(function (p) { p[0] *= k; p[1] *= k; }); });
+    }
+    sonGenislik = r.width;
     tuval.width = Math.round(r.width * dpr); tuval.height = Math.round(r.height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     yenidenCiz();
@@ -234,7 +247,7 @@ var OnIsleme = (function () {
 
   tuval.addEventListener("pointerdown", function (e) {
     if (aktif !== null) return;
-    e.preventDefault(); tuval.setPointerCapture(e.pointerId); aktif = e.pointerId;
+    e.preventDefault(); try { tuval.setPointerCapture(e.pointerId); } catch (h) { } aktif = e.pointerId;
     vuruslar.push([nokta(e)]); yenidenCiz();
   });
   tuval.addEventListener("pointermove", function (e) {
@@ -250,9 +263,17 @@ var OnIsleme = (function () {
   function bitti(e) { if (e.pointerId === aktif) { aktif = null; durum(); } }
   tuval.addEventListener("pointerup", bitti);
   tuval.addEventListener("pointercancel", bitti);
+  // dokunmatik ekranda tuval uzerinde kaydirma, yakinlastirma ve uzun basinca acilan menuyu engelle
+  ["touchstart", "touchmove", "touchend"].forEach(function (t) {
+    tuval.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false });
+  });
+  document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
   $("temizle").addEventListener("click", function () { vuruslar = []; aktif = null; yenidenCiz(); });
   $("geriAl").addEventListener("click", function () { vuruslar.pop(); yenidenCiz(); });
-  window.addEventListener("resize", boyutla);
+  // mobil tarayicilarda adres cubugu acilip kapaninca da "resize" gelir; sadece tuvalin genisligi degistiyse yeniden boyutla
+  window.addEventListener("resize", function () {
+    if (Math.abs(tuval.getBoundingClientRect().width - sonGenislik) > 0.5) boyutla();
+  });
   boyutla();
 })();
 </script>

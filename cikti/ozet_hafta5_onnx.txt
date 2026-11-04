@@ -1,0 +1,15 @@
+HAFTA 5 - ONNX DONUSUMU
+Tarih: 2026-11-04 21:49
+PyTorch 2.14.1+cu130, onnxruntime 1.31.1
+
+              model     surum     test_kumesi  ornek  dogruluk_%  pytorch_ile_ayni_tahmin_%  en_buyuk_skor_farki  dosya_KB  tahmin_ms_cpu
+LeNet-5 benzeri CNN   PyTorch      MNIST test  10000       99.00                     100.00             0.000000     245.3          0.232
+LeNet-5 benzeri CNN      ONNX      MNIST test  10000       99.00                     100.00             0.000008     243.7          0.053
+LeNet-5 benzeri CNN ONNX int8      MNIST test  10000       99.02                      99.93             0.964697      76.9          0.110
+LeNet-5 benzeri CNN   PyTorch Dokunmatik test  16087       97.48                     100.00             0.000000     245.3          0.232
+LeNet-5 benzeri CNN      ONNX Dokunmatik test  16087       97.48                     100.00             0.000008     243.7          0.053
+LeNet-5 benzeri CNN ONNX int8 Dokunmatik test  16087       97.47                      99.96             0.224220      76.9          0.110
+
+Uygulamaya eklenecek dosyalar:
+  secilen.onnx: LeNet-5 benzeri CNN, 32 bit, 243.7 KB
+  secilen_int8.onnx: LeNet-5 benzeri CNN, 8 bit (int8), 76.9 KB
