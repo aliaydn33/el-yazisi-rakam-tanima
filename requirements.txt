@@ -8,3 +8,7 @@ pillow
 scipy
 onnx
 onnxruntime
+fastapi
+uvicorn
+python-multipart
+opencv-python-headless

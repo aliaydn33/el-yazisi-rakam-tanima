@@ -4,12 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rakam Tanıma</title>
+<meta name="description" content="Ekrana çizilen rakamları tanıyan uygulama (41.GRUP)">
+<meta name="theme-color" content="#2F4B7C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rakam Tanıma">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="simgeler/simge-192.png">
+<link rel="apple-touch-icon" href="simgeler/simge-180.png">
 <!--
-  El Yazısı Rakam Tanıma - uygulamanın 5. hafta sürümü (41.GRUP)
+  El Yazısı Rakam Tanıma - uygulamanın 7. hafta sürümü (41.GRUP)
+  6. haftada eklenenler: model emin olmadığında "rakam değil" uyarısı ve "Açıkla" düğmesiyle Grad-CAM ısı haritası.
+  7. haftada eklenenler:
+    - Uygulama telefona kurulabilir (PWA): manifest.webmanifest ve sw.js (service worker). İlk açılıştan sonra
+      sayfa ve onnxruntime-web dosyaları cihazda saklanır, uygulama internet olmadan da açılır.
+    - "Sayı / işlem" modu: en fazla 6 basamaklı sayılar ve +, −, × işlemleri okunup sonuç hesaplanır.
+    - Yanlış tahminin düzeltilmesi: kullanıcı doğru rakamı seçer, düzeltme sunucuya (yoksa cihaza) kaydedilir.
+    - Fotoğraftan okuma: sayfa sunucudan (sunucu.py) açıldıysa kâğıttaki rakamların fotoğrafı okunabilir.
 
   Bu dosya bir şablondur. 7_uygulama_olustur.py, onnx/ klasöründeki modelleri aşağıdaki "model-verisi"
-  bölümüne ekleyerek index.html dosyasını üretir. Böylece uygulama tek bir dosyadan oluşur ve sunucu
-  gerektirmez: tahmin kullanıcının tarayıcısında yapılır.
+  bölümüne ekleyerek index.html dosyasını üretir. Tahmin kullanıcının tarayıcısında yapılır, çizim sunucuya
+  gönderilmez. Sunucu yalnızca fotoğraftan okuma ve düzeltme kaydı için kullanılır.
 
   Tahmin iki yoldan biriyle yapılır:
     1) onnxruntime-web (Microsoft): ONNX modellerini WebAssembly ile çalıştıran kütüphane. İnternetten yüklenir.
@@ -40,9 +55,16 @@
   #tuval { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; background: #fff;
     border: 2px dashed var(--cizgi); border-radius: 12px; touch-action: none; cursor: crosshair;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  #isi { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; border-radius: 12px;
+    opacity: 0; transition: opacity .15s; }
+  #isi.acik { opacity: 1; }
+  button[aria-pressed="true"] { background: var(--vurgu); border-color: var(--vurgu); color: #fff; }
+  #rakam.ret { color: var(--uyari-yazi); font-size: 3rem; }
+  .isi-aciklama { font-size: .75rem; color: var(--ikincil); text-align: center; margin: 8px auto 0; max-width: 380px; display: none; }
+  .isi-aciklama.acik { display: block; }
   .ipucu { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center;
     color: #9AA3AF; font-size: .9rem; pointer-events: none; text-align: center; padding: 0 24px; }
-  .dugmeler { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px auto 0; max-width: 380px; }
+  .dugmeler { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px auto 0; max-width: 380px; }
   button, select { font: inherit; font-size: .95rem; min-height: 44px; padding: 0 14px; border-radius: 10px;
     border: 1px solid var(--cizgi); background: var(--kart); color: var(--yazi); }
   button { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
@@ -87,6 +109,62 @@
   th { color: var(--ikincil); font-weight: 600; }
   .not { font-size: .75rem; color: var(--ikincil); margin: 8px 0 0; line-height: 1.45; }
   #kopyaMetni { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }
+  [hidden] { display: none !important; }
+
+  /* ust bilgi: kurulum dugmesi ve baglanti durumu */
+  header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 12px; }
+  header > div:first-child { flex: 1 1 210px; min-width: 0; }
+  .ust-sag { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .etiket { font-size: .72rem; padding: 4px 9px; border-radius: 999px; background: var(--uyari-zemin);
+    border: 1px solid var(--uyari-cizgi); color: var(--uyari-yazi); white-space: nowrap; }
+  #yukle { min-height: 36px; font-size: .85rem; padding: 0 12px; }
+
+  /* mod secimi */
+  .modlar { display: grid; grid-template-columns: 1fr 1fr; max-width: 380px; margin: 0 auto 12px; border: 1px solid var(--cizgi);
+    border-radius: 10px; overflow: hidden; }
+  .modlar button { border: 0; border-radius: 0; min-height: 40px; font-size: .9rem; background: var(--kart); }
+  .modlar button + button { border-left: 1px solid var(--cizgi); }
+  .modlar button[aria-pressed="true"] { background: var(--vurgu); color: #fff; }
+  body.sayi-modu .tuval-kutu, body.sayi-modu .dugmeler { max-width: 640px; }
+  body.sayi-modu .tuval-kutu::before { padding-top: 50%; }
+  body.sayi-modu .izgara { grid-template-columns: 1fr; }
+  body.sayi-modu #acikla { display: none; }
+  body.sayi-modu .dugmeler { grid-template-columns: 1fr 1fr; }
+  body.sayi-modu #isi { opacity: 1; }
+  .sayi-sonuc { display: none; }
+  body.sayi-modu .sayi-sonuc { display: block; }
+  body.sayi-modu .rakam-sonuc { display: none; }
+  #okunan { font-size: 2rem; font-weight: 700; line-height: 1.2; color: var(--vurgu); word-break: break-all;
+    font-variant-numeric: tabular-nums; min-height: 2.4rem; }
+  #okunan.bos { color: #B8BEC7; font-size: 1.2rem; font-weight: 600; }
+  #okunanNot { font-size: .85rem; color: var(--ikincil); margin: 4px 0 0; min-height: 1.2em; }
+  .semboller { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .sembol { display: flex; flex-direction: column; align-items: center; width: 52px; padding: 4px 2px; border-radius: 8px;
+    border: 1px solid var(--cizgi); font-size: .7rem; color: var(--ikincil); font-variant-numeric: tabular-nums; }
+  .sembol canvas { width: 36px; height: 36px; image-rendering: pixelated; background: #000; border-radius: 4px; }
+  .sembol b { font-size: 1rem; color: var(--yazi); line-height: 1.3; }
+  .sembol.isaret b { color: var(--vurgu); }
+  .sembol.supheli { border-color: var(--uyari-cizgi); background: var(--uyari-zemin); }
+  .sembol.supheli b { color: var(--uyari-yazi); }
+
+  /* duzeltme */
+  .duzelt { border-top: 1px solid var(--cizgi); padding-top: 10px; }
+  .bag { min-height: 36px; padding: 0 10px; font-size: .85rem; background: transparent; color: var(--vurgu); }
+  .duzelt-rakamlar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
+  .duzelt-rakamlar button { min-height: 44px; padding: 0; font-weight: 600; }
+  .duzelt p { margin: 6px 0 0; }
+
+  /* fotograf */
+  .foto-ust { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  label.dugme { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 10px; cursor: pointer;
+    background: var(--vurgu); color: #fff; font-size: .95rem; margin: 0; }
+  #fotoTuval { display: block; max-width: 100%; margin-top: 12px; border-radius: 8px; border: 1px solid var(--cizgi); }
+  #fotoMetin { font-size: 1.6rem; font-weight: 700; color: var(--vurgu); margin: 12px 0 0; white-space: pre-line;
+    font-variant-numeric: tabular-nums; word-break: break-all; }
+  .uygulama-durum { margin-top: 14px; }
+  .uygulama-durum dl { grid-template-columns: auto minmax(0, 1fr); }
+  .uygulama-durum dd { white-space: normal; }
+  .uygulama-durum .olcum-dugmeleri { margin-top: 8px; }
 
   @media (max-width: 680px) {
     .izgara { grid-template-columns: 1fr; }
@@ -95,36 +173,51 @@
     .cubuklar { height: 96px; }
     #rakam { font-size: 3.4rem; width: 52px; }
     .ayarlar { grid-template-columns: 1fr; }
+    body.sayi-modu .tuval-kutu, body.sayi-modu .dugmeler { max-width: 640px; }
+    #okunan { font-size: 1.7rem; }
   }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>Rakam Tanıma</h1>
-    <p>El Yazısı Rakam Tanıma Projesi · 41.GRUP · 5. hafta sürümü</p>
+    <div>
+      <h1>Rakam Tanıma</h1>
+      <p>El Yazısı Rakam Tanıma Projesi · 41.GRUP · 7. hafta sürümü</p>
+    </div>
+    <div class="ust-sag">
+      <span id="cevrimdisi" class="etiket" hidden>İnternet yok</span>
+      <button id="yukle" hidden>Uygulamayı yükle</button>
+    </div>
   </header>
   <noscript><p class="durum uyari">Bu sayfa JavaScript ile çalışır. Dosya önizlemesi olarak açıldıysa çalışmaz, bağlantı bir tarayıcıda açılmalıdır.</p></noscript>
 
   <div class="izgara">
     <section class="kart">
+      <div class="modlar" role="group" aria-label="Tanıma modu">
+        <button id="modRakam" aria-pressed="true">Rakam</button>
+        <button id="modSayi" aria-pressed="false">Sayı / işlem</button>
+      </div>
       <div class="tuval-kutu">
         <canvas id="tuval" aria-label="Çizim alanı"></canvas>
+        <canvas id="isi" aria-hidden="true"></canvas>
         <div id="ipucu" class="ipucu">Buraya 0-9 arasında bir rakam çizin</div>
       </div>
       <div class="dugmeler">
         <button id="geriAl" disabled>Geri al</button>
         <button id="temizle" disabled>Temizle</button>
+        <button id="acikla" aria-pressed="false" disabled>Açıkla</button>
       </div>
+      <p id="isiAciklama" class="isi-aciklama">Kırmızıya yaklaşan bölgeler, modelin bu tahmini yaparken en çok dikkate aldığı yerlerdir (Grad-CAM).</p>
     </section>
 
     <section class="kart sonuc" aria-live="polite">
-      <div class="rakam">
+      <div class="rakam rakam-sonuc">
         <div id="rakam">?</div>
         <p><span id="guven">Çizim bekleniyor</span><br><span id="ikinci"></span></p>
       </div>
-      <div class="cubuklar" id="cubuklar" role="img" aria-label="10 rakamın olasılıkları"></div>
-      <div class="alt">
+      <div class="cubuklar rakam-sonuc" id="cubuklar" role="img" aria-label="10 rakamın olasılıkları"></div>
+      <div class="alt rakam-sonuc">
         <canvas id="onizleme" width="28" height="28" aria-label="Modelin gördüğü 28×28 görüntü"></canvas>
         <dl>
           <dt>Ön işleme</dt><dd id="sureOn">-</dd>
@@ -133,8 +226,29 @@
           <dt>Hesaplayan</dt><dd id="hesaplayan">-</dd>
         </dl>
       </div>
+      <div class="duzelt rakam-sonuc" id="duzeltAlan" hidden>
+        <button id="duzeltAc" class="bag" aria-expanded="false">Tahmin yanlış mı?</button>
+        <div id="duzeltRakamlar" class="duzelt-rakamlar" hidden></div>
+        <p id="duzeltDurum" class="not"></p>
+      </div>
+      <div class="sayi-sonuc">
+        <div id="okunan" class="bos">Sayı ya da işlem yazın</div>
+        <p id="okunanNot">Örnek: 125 + 37. Sembollerin arasında biraz boşluk bırakın.</p>
+        <div class="semboller" id="semboller"></div>
+      </div>
     </section>
   </div>
+
+  <section class="kart" id="fotoKart" style="margin-top:12px" hidden>
+    <h2>Fotoğraftan okuma</h2>
+    <div class="foto-ust">
+      <label class="dugme" for="fotoSec">Fotoğraf seç</label>
+      <input type="file" id="fotoSec" accept="image/*" hidden>
+      <span id="fotoDurum" class="not" style="margin:0">Kâğıda yazılmış rakamların fotoğrafı sunucuda okunur.</span>
+    </div>
+    <div id="fotoMetin" aria-live="polite"></div>
+    <canvas id="fotoTuval" hidden></canvas>
+  </section>
 
   <section class="kart" style="margin-top:12px">
     <details id="ayrinti">
@@ -157,6 +271,20 @@
         10 kez ısındırıldıktan sonra 100 kez çalıştırılır. Kopyalanan sonuca tarayıcı ve ekran bilgisi de eklenir.</p>
       <div id="olcumSonucu"></div>
       <textarea id="kopyaMetni" readonly aria-hidden="true" tabindex="-1"></textarea>
+      <div class="uygulama-durum">
+        <h2>Uygulama</h2>
+        <dl>
+          <dt>İnternetsiz kullanım</dt><dd id="pwaDurum">-</dd>
+          <dt>Sunucu</dt><dd id="sunucuDurum">Kontrol ediliyor…</dd>
+          <dt>Bu cihazdaki düzeltmeler</dt><dd id="yerelSayi">0</dd>
+        </dl>
+        <div class="olcum-dugmeleri">
+          <button id="duzeltmeIndir" disabled>Düzeltmeleri indir</button>
+          <button id="duzeltmeSil" disabled>Cihazdan sil</button>
+        </div>
+        <p class="not">Uygulama, tarayıcı menüsündeki “Ana ekrana ekle” ya da “Uygulamayı yükle” seçeneğiyle de kurulabilir.
+          Sunucu bulunmadığında düzeltmeler yalnızca bu cihazda saklanır ve dosya olarak indirilebilir.</p>
+      </div>
     </details>
   </section>
 </main>
@@ -196,7 +324,7 @@ var OnIsleme = (function () {
     });
     var veri = g.getImageData(0, 0, boyut, boyut).data, gri = new Float32Array(boyut * boyut);
     for (var i = 0; i < gri.length; i++) gri[i] = veri[i * 4];
-    return { gri: gri, w: boyut, h: boyut };
+    return { gri: gri, w: boyut, h: boyut, x0: x0, y0: y0, olcek: olcek, bosluk: bosluk };
   }
 
   // Pillow'un Image.resize(LANCZOS) yontemi: once yatay, sonra dikey gecis; aradaki goruntu 8 bit
@@ -238,7 +366,7 @@ var OnIsleme = (function () {
       if (r0 < 0) r0 = y; r1 = y; if (c0 < 0 || x < c0) c0 = x; if (x > c1) c1 = x;
     }
     var kutu = new Float32Array(784);
-    if (r0 < 0) return new Uint8Array(784);
+    if (r0 < 0) { g.donusum = null; return new Uint8Array(784); }
     var kh = r1 - r0 + 1, kw = c1 - c0 + 1, kirpik = new Float32Array(kh * kw);
     for (y = 0; y < kh; y++) for (x = 0; x < kw; x++) kirpik[y * kw + x] = a[(r0 + y) * w + c0 + x];
     var olcek = 20 / Math.max(kh, kw), yw = Math.max(1, pyRound(kw * olcek)), yh = Math.max(1, pyRound(kh * olcek));
@@ -251,6 +379,9 @@ var OnIsleme = (function () {
     var cy = sy / top, cx = sx / top;
     var dy = Math.min(Math.max(14 - cy, -ust), 28 - (ust + yh)), dx = Math.min(Math.max(14 - cx, -sol), 28 - (sol + yw));
     // scipy.ndimage.shift(order=1, mode="constant") ile ayni: kaynak = hedef - kayma, disarisi 0
+    // tuvaldeki bir noktanin 28x28 goruntudeki yeri: kirp -> olcekle -> yerlestir -> kaydir
+    g.donusum = { x0: g.x0, y0: g.y0, olcek: g.olcek, bosluk: g.bosluk, r0: r0, c0: c0, ox: yw / kw, oy: yh / kh,
+                  ust: ust, sol: sol, dx: dx, dy: dy };
     var out = new Uint8Array(784);
     for (y = 0; y < 28; y++) for (x = 0; x < 28; x++) {
       var ky = y - dy, kx = x - dx;
@@ -265,7 +396,9 @@ var OnIsleme = (function () {
   }
 
   return { vuruslariCiz: vuruslariCiz, mnistBicimi: mnistBicimi,
-           cizimden28: function (vuruslar) { return mnistBicimi(vuruslariCiz(vuruslar)); } };
+           cizimden28: function (vuruslar) { return mnistBicimi(vuruslariCiz(vuruslar)); },
+           // goruntu ile birlikte tuval -> 28x28 donusumunu de verir
+           ayrintili: function (vuruslar) { var g = vuruslariCiz(vuruslar), x = mnistBicimi(g); return { goruntu: x, donusum: g.donusum }; } };
 })();
 
 /* ============================================================================================
@@ -527,7 +660,233 @@ var YedekHesaplayici = (function () {
     });
     return d[this.cikis].v;
   };
+  /* Grad-CAM (Selvaraju vd., 2017): son evrisim katmanindan sonraki ReLU'nun cikisi (A) ve secilen sinifin skorunun
+     A'ya gore turevi (G) hesaplanir. Her oznitelik haritasinin agirligi G'nin ortalamasidir; isi haritasi
+     ReLU(sum_k w_k A_k) olup 28x28'e iki dogrusal ara degerlemeyle buyutulur (PyTorch'taki F.interpolate ile ayni).
+     Turev, siniflandirici katmanlarindan geriye dogru elle hesaplanir (Gemm, ReLU, maks. havuzlama, duzlestirme). */
+  var GERI = {
+    Gemm: function (n, g, d, sabit) {
+      var A = d[n.giris[0]], B = d[n.giris[1]] || sabit[n.giris[1]], tB = n.oz.transB || 0, al = n.oz.alpha === undefined ? 1 : n.oz.alpha;
+      var M = A.s[0], K2 = A.s[1], N = tB ? B.s[0] : B.s[1], dA = new Float32Array(M * K2);
+      for (var i = 0; i < M; i++) for (var k = 0; k < K2; k++) {
+        var t = 0;
+        for (var j = 0; j < N; j++) t += g[i * N + j] * (tB ? B.v[j * K2 + k] : B.v[k * N + j]);
+        dA[i * K2 + k] = al * t;
+      }
+      return dA;
+    },
+    Relu: function (n, g, d) { var x = d[n.giris[0]].v, r = new Float32Array(g.length); for (var i = 0; i < g.length; i++) r[i] = x[i] > 0 ? g[i] : 0; return r; },
+    Flatten: function (n, g) { return g; }, Reshape: function (n, g) { return g; },
+    Identity: function (n, g) { return g; }, Dropout: function (n, g) { return g; },
+    MaxPool: function (n, g, d) {
+      var x = d[n.giris[0]], y = d[n.cikis[0]], C = x.s[0] * x.s[1], H = x.s[2], W = x.s[3], OH = y.s[2], OW = y.s[3];
+      var k = n.oz.kernel_shape, ad = n.oz.strides || [1, 1], pd = n.oz.pads || [0, 0, 0, 0], r = new Float32Array(x.v.length);
+      for (var c = 0; c < C; c++) for (var oh = 0; oh < OH; oh++) for (var ow = 0; ow < OW; ow++) {
+        var en = -Infinity, yer = -1;
+        for (var a = 0; a < k[0]; a++) for (var b = 0; b < k[1]; b++) {
+          var ih = oh * ad[0] - pd[0] + a, iw = ow * ad[1] - pd[1] + b;
+          if (ih >= 0 && ih < H && iw >= 0 && iw < W) { var q = (c * H + ih) * W + iw; if (x.v[q] > en) { en = x.v[q]; yer = q; } }
+        }
+        if (yer >= 0) r[yer] += g[(c * OH + oh) * OW + ow];
+      }
+      return r;
+    }
+  };
+  Model.prototype.gradcam = function (x, sinif) {
+    var sabit = this.sabit, d = {}, dugum = this.dugumler;
+    d[this.giris] = { s: [1, 1, 28, 28], v: x };
+    dugum.forEach(function (n) {
+      var g = n.giris.map(function (a) { return a === "" ? null : (d[a] || sabit[a]); });
+      d[n.cikis[0]] = K[n.tur](g, n.oz);
+    });
+    var skor = d[this.cikis].v;
+    if (sinif === undefined) { sinif = 0; for (var i = 1; i < skor.length; i++) if (skor[i] > skor[sinif]) sinif = i; }
+    // hedef: son Conv'dan sonraki ReLU'nun cikisi
+    var son = -1;
+    dugum.forEach(function (n, i) { if (n.tur === "Conv") son = i; });
+    if (son < 0) return null;
+    var hedef = dugum[son].cikis[0], hedefSira = son;
+    for (var j = son + 1; j < dugum.length; j++) if (dugum[j].tur === "Relu" && dugum[j].giris[0] === hedef) { hedef = dugum[j].cikis[0]; hedefSira = j; break; }
+    var tur = {}; tur[this.cikis] = new Float32Array(skor.length); tur[this.cikis][sinif] = 1;
+    for (var m = dugum.length - 1; m > hedefSira; m--) {
+      var n = dugum[m], gy = tur[n.cikis[0]];
+      if (!gy) continue;
+      if (!GERI[n.tur]) return null;
+      var gx = GERI[n.tur](n, gy, d, sabit), ad = n.giris[0];
+      if (tur[ad]) { for (var t = 0; t < gx.length; t++) tur[ad][t] += gx[t]; } else tur[ad] = gx;
+    }
+    var A = d[hedef], G = tur[hedef];
+    if (!G) return null;
+    var C = A.s[1], H = A.s[2], W = A.s[3], HW = H * W, cam = new Float32Array(HW);
+    for (var c = 0; c < C; c++) {
+      var w = 0; for (var q = 0; q < HW; q++) w += G[c * HW + q]; w /= HW;
+      for (q = 0; q < HW; q++) cam[q] += w * A.v[c * HW + q];
+    }
+    for (q = 0; q < HW; q++) if (cam[q] < 0) cam[q] = 0;
+    // 28x28'e buyut (align_corners=False)
+    var out = new Float32Array(784), en = 0;
+    for (var yy = 0; yy < 28; yy++) for (var xx = 0; xx < 28; xx++) {
+      var sy = Math.max((yy + 0.5) * H / 28 - 0.5, 0), sx = Math.max((xx + 0.5) * W / 28 - 0.5, 0);
+      var y0 = Math.min(Math.floor(sy), H - 1), x0 = Math.min(Math.floor(sx), W - 1), y1 = Math.min(y0 + 1, H - 1), x1 = Math.min(x0 + 1, W - 1);
+      var fy = sy - y0, fx = sx - x0;
+      var v = cam[y0 * W + x0] * (1 - fy) * (1 - fx) + cam[y0 * W + x1] * (1 - fy) * fx + cam[y1 * W + x0] * fy * (1 - fx) + cam[y1 * W + x1] * fy * fx;
+      out[yy * 28 + xx] = v; if (v > en) en = v;
+    }
+    if (en > 0) for (q = 0; q < 784; q++) out[q] /= en;
+    return { cam: out, sinif: sinif };
+  };
   return { Model: Model };
+})();
+
+/* ============================================================================================
+   SAYI VE ISLEM OKUMA (IG-10)
+     1) Vuruslar sembollere ayrilir: bir vurus, yatayda belirgin bicimde cakistigi semboldedir (4'un iki cizgisi,
+        7'nin ortasindaki cizgi, + isaretinin iki cizgisi gibi). Cakismayan vurus yeni bir sembol baslatir.
+     2) Isaretler cizgilerin geometrisinden taninir:
+          -  tek, duz, yataya yakin cizgi
+          +  iki duz cizgi, biri yatay biri dikey, ortalarina yakin yerde kesisiyor
+          x  iki duz capraz cizgi, ortalarina yakin yerde kesisiyor
+          =  iki duz yatay cizgi, ust uste ve kesismiyor (yalnizca sonda kullanilir)
+        Geri kalan her sembol rakam modeline verilir.
+     3) Ardisik rakamlar sayi olur (en fazla 6 basamak), carpma toplama ve cikarmadan once yapilir.
+   ============================================================================================ */
+var SayiOkuma = (function () {
+  "use strict";
+  var EKSI = "−", CARPI = "×";
+  function kutu(v) {
+    var k = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+    v.forEach(function (p) { k.x0 = Math.min(k.x0, p[0]); k.x1 = Math.max(k.x1, p[0]); k.y0 = Math.min(k.y0, p[1]); k.y1 = Math.max(k.y1, p[1]); });
+    return k;
+  }
+  function birlesim(a, b) { return { x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) }; }
+  function cakismaOrani(a, b) {                // yataydaki ortak kisim / dar olanin genisligi
+    var c = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
+    return c / Math.max(1, Math.min(a.x1 - a.x0, b.x1 - b.x0));
+  }
+  function noktaParca(p, a, b) {               // noktanin dogru parcasina uzakligi
+    var dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy, t = L ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L : 0;
+    t = t < 0 ? 0 : (t > 1 ? 1 : t);
+    return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+  }
+  function vurusUzakligi(v1, v2) {
+    var en = Infinity, i, j;
+    for (i = 0; i < v1.length; i++) {
+      if (v2.length === 1) { en = Math.min(en, Math.hypot(v1[i][0] - v2[0][0], v1[i][1] - v2[0][1])); continue; }
+      for (j = 1; j < v2.length; j++) en = Math.min(en, noktaParca(v1[i], v2[j - 1], v2[j]));
+    }
+    return en;
+  }
+  // iki parca ayni sembol mu? (1) yatayda belirgin cakisma ya da (2) birbirine degiyorlar ve birlesince bir rakam
+  // boyutunda kaliyorlar (5'in sagdan tasan sapkasi, 4'un yatay cizgiye degen dikey cizgisi gibi)
+  function ayniSembol(a, b, vuruslar) {
+    if (cakismaOrani(a.k, b.k) >= 0.3) return true;
+    var k = birlesim(a.k, b.k), H = Math.max(a.k.y1 - a.k.y0, b.k.y1 - b.k.y0);
+    if (k.x1 - k.x0 > 1.3 * (k.y1 - k.y0)) return false;
+    var en = Infinity;
+    a.v.forEach(function (i) { b.v.forEach(function (j) {
+      en = Math.min(en, vurusUzakligi(vuruslar[i], vuruslar[j]), vurusUzakligi(vuruslar[j], vuruslar[i]));
+    }); });
+    return en < 0.1 * H;
+  }
+  function grupla(vuruslar) {
+    var g = [];
+    vuruslar.forEach(function (v, i) {
+      if (!v.length) return;
+      var yeni = { v: [i], k: kutu(v) }, en = null, enC = -Infinity;
+      g.forEach(function (s) {
+        if (!ayniSembol(yeni, s, vuruslar)) return;
+        var c = cakismaOrani(yeni.k, s.k); if (c > enC) { enC = c; en = s; }
+      });
+      if (en) { en.v.push(i); en.k = birlesim(en.k, yeni.k); } else g.push(yeni);
+    });
+    for (var degisti = true; degisti;) {         // buyuyen semboller birbiriyle cakisabilir
+      degisti = false;
+      for (var a = 0; a < g.length && !degisti; a++) for (var b = a + 1; b < g.length; b++) {
+        if (ayniSembol(g[a], g[b], vuruslar)) {
+          g[a].v = g[a].v.concat(g[b].v).sort(function (x, y) { return x - y; }); g[a].k = birlesim(g[a].k, g[b].k);
+          g.splice(b, 1); degisti = true; break;
+        }
+      }
+    }
+    g.sort(function (a, b) { return (a.k.x0 + a.k.x1) - (b.k.x0 + b.k.x1); });
+    // komsu rakamin ust kisminda duran tek yatay cizgi eksi isareti degil, o rakamin parcasidir (5'in sapkasi).
+    // Eksi isareti rakamlarin ortasi hizasinda yazilir.
+    for (var i = 0; i < g.length; i++) {
+      var s = g[i], c = s.v.length === 1 ? cizgi(vuruslar[s.v[0]]) : null;
+      if (!c || !c.duz || !yatay(c.aci, 25)) continue;
+      var orta = (s.k.y0 + s.k.y1) / 2, hedef = -1;
+      [i - 1, i + 1].forEach(function (j) {
+        if (j < 0 || j >= g.length || hedef >= 0) return;
+        var n = g[j].k, h = n.y1 - n.y0, ara = Math.max(n.x0 - s.k.x1, s.k.x0 - n.x1, 0);
+        if (h > 2 * (s.k.y1 - s.k.y0) && orta < n.y0 + 0.3 * h && ara < 0.3 * h) hedef = j;
+      });
+      if (hedef >= 0) {
+        g[hedef].v = g[hedef].v.concat(s.v).sort(function (x, y) { return x - y; }); g[hedef].k = birlesim(g[hedef].k, s.k);
+        g.splice(i, 1); i--;
+      }
+    }
+    return g.map(function (s) { return { vuruslar: s.v.map(function (i) { return vuruslar[i]; }), kutu: s.k }; });
+  }
+  function cizgi(v) {                           // vurus duz bir cizgi mi? aci: 0 yatay, 90 dikey
+    if (v.length < 2) return null;
+    var a = v[0], b = v[v.length - 1], dx = b[0] - a[0], dy = b[1] - a[1], kiris = Math.hypot(dx, dy), yol = 0, sapma = 0;
+    if (kiris < 1) return null;
+    for (var i = 1; i < v.length; i++) yol += Math.hypot(v[i][0] - v[i - 1][0], v[i][1] - v[i - 1][1]);
+    v.forEach(function (p) { sapma = Math.max(sapma, Math.abs((p[0] - a[0]) * dy - (p[1] - a[1]) * dx) / kiris); });
+    var aci = Math.atan2(dy, dx) * 180 / Math.PI; if (aci < 0) aci += 180; if (aci >= 180) aci -= 180;
+    return { duz: kiris / yol > 0.85 && sapma / kiris < 0.15, aci: aci, a: a, b: b, uzunluk: kiris };
+  }
+  function kesisim(c1, c2) {                    // iki dogru parcasinin kesistigi yer (her birinde 0-1 arasi konum)
+    var r = [c1.b[0] - c1.a[0], c1.b[1] - c1.a[1]], s = [c2.b[0] - c2.a[0], c2.b[1] - c2.a[1]], d = r[0] * s[1] - r[1] * s[0];
+    if (Math.abs(d) < 1e-9) return null;
+    var q = [c2.a[0] - c1.a[0], c2.a[1] - c1.a[1]];
+    return { t: (q[0] * s[1] - q[1] * s[0]) / d, u: (q[0] * r[1] - q[1] * r[0]) / d };
+  }
+  function yatay(a, tol) { return a <= tol || a >= 180 - tol; }
+  function isaret(sembol) {
+    var v = sembol.vuruslar, c = v.map(cizgi);
+    if (c.some(function (x) { return !x || !x.duz; })) return null;
+    if (v.length === 1) return yatay(c[0].aci, 25) ? EKSI : null;
+    if (v.length !== 2) return null;
+    var k = kesisim(c[0], c[1]);
+    var ortada = k && k.t > 0.2 && k.t < 0.8 && k.u > 0.2 && k.u < 0.8;
+    var dikey = function (a) { return Math.abs(a - 90) <= 25; };
+    if (ortada) {
+      if ((yatay(c[0].aci, 25) && dikey(c[1].aci)) || (dikey(c[0].aci) && yatay(c[1].aci, 25))) return "+";
+      var d1 = Math.abs(c[0].aci - 45) <= 25 && Math.abs(c[1].aci - 135) <= 25, d2 = Math.abs(c[0].aci - 135) <= 25 && Math.abs(c[1].aci - 45) <= 25;
+      if (d1 || d2) return CARPI;
+    } else if (yatay(c[0].aci, 20) && yatay(c[1].aci, 20) && (!k || k.t < -0.1 || k.t > 1.1 || k.u < -0.1 || k.u > 1.1)) {
+      var ara = Math.abs((c[0].a[1] + c[0].b[1]) - (c[1].a[1] + c[1].b[1])) / 2;
+      if (ara > 0.15 * Math.min(c[0].uzunluk, c[1].uzunluk)) return "=";
+    }
+    return null;
+  }
+  // semboller: [{tur: "rakam" | "isaret", deger: "7" | "+" ...}] -> { metin, sonuc, hata }
+  function hesapla(semboller) {
+    var s = semboller.map(function (x) { return x.deger; }), metin = "", parcalar = [], sayi = "", hata = null;
+    if (s.length && s[s.length - 1] === "=") s = s.slice(0, -1);
+    s.forEach(function (d) {
+      if (/^[0-9]$/.test(d)) { sayi += d; return; }
+      if (!sayi) hata = hata || "İşaretten önce bir sayı olmalı";
+      parcalar.push(sayi, d); sayi = "";
+    });
+    parcalar.push(sayi);
+    metin = parcalar.filter(function (p) { return p !== ""; }).join(" ");
+    if (!s.length) return { metin: "", sonuc: null, hata: null };
+    if (!sayi) hata = hata || "İşaretten sonra bir sayı olmalı";
+    for (var i = 0; i < parcalar.length; i += 2) if (parcalar[i].length > 6) hata = hata || "Sayılar en fazla 6 basamaklı olabilir";
+    if (parcalar.indexOf("=") >= 0) hata = hata || "Eşittir işareti yalnızca sonda kullanılabilir";
+    if (hata || parcalar.length === 1) return { metin: metin, sonuc: null, hata: hata };
+    var t = [Number(parcalar[0])];                // once carpma
+    for (i = 1; i < parcalar.length; i += 2) {
+      var x = Number(parcalar[i + 1]);
+      if (parcalar[i] === CARPI) t[t.length - 1] *= x; else t.push(parcalar[i], x);
+    }
+    var sonuc = t[0];
+    for (i = 1; i < t.length; i += 2) sonuc = t[i] === "+" ? sonuc + t[i + 1] : sonuc - t[i + 1];
+    return { metin: metin, sonuc: sonuc, hata: null };
+  }
+  return { grupla: grupla, isaret: isaret, hesapla: hesapla, EKSI: EKSI, CARPI: CARPI };
 })();
 
 /* ============================================================================================
@@ -648,6 +1007,17 @@ var YedekHesaplayici = (function () {
     }
     try { return Promise.resolve(jsModeli(ad).calistir(x)); } catch (h) { return Promise.reject(h); }
   }
+  // "rakam degil" karari: 9_rakam_degil.py'nin dokunmatik dogrulama kumesinde gercek rakamlarin en fazla %5'ini
+  // reddedecek sekilde sectigi esik. msp: en yuksek olasilik, enerji: skorlarin log-toplam-ustel degeri.
+  function rakamDegilMi(skor, ad) {
+    var rd = MODELLER[ad || modelAdi].bilgi.rakam_degil;
+    if (!rd) return false;
+    var en = -Infinity, i, t = 0;
+    for (i = 0; i < skor.length; i++) if (skor[i] > en) en = skor[i];
+    for (i = 0; i < skor.length; i++) t += Math.exp(skor[i] - en);
+    var eminlik = rd.yontem === "msp" ? 1 / t : en + Math.log(t);
+    return eminlik < rd.esik;
+  }
   function softmax(s) {
     var en = -Infinity, top = 0, p = [], i;
     for (i = 0; i < s.length; i++) if (s[i] > en) en = s[i];
@@ -661,7 +1031,7 @@ var YedekHesaplayici = (function () {
     c.innerHTML = '<span></span><div class="kap"><i></i></div><b>' + r + "</b>";
     $("cubuklar").appendChild(c);
   }
-  function sonucuGoster(p, sOn, sModel, motor) {
+  function sonucuGoster(p, sOn, sModel, motor, ret) {
     var cub = $("cubuklar").children, i;
     if (!p) {
       $("rakam").textContent = "?"; $("rakam").className = ""; $("guven").textContent = "Çizim bekleniyor"; $("ikinci").textContent = "";
@@ -670,15 +1040,21 @@ var YedekHesaplayici = (function () {
       return;
     }
     var sira = p.map(function (v, k) { return k; }).sort(function (a, b) { return p[b] - p[a]; }), en = sira[0];
-    $("rakam").textContent = en; $("rakam").className = "var";
-    $("guven").textContent = "Güven: %" + sayi(p[en] * 100);
-    $("ikinci").textContent = p[sira[1]] >= 0.01 ? "İkinci tahmin: " + sira[1] + " (%" + sayi(p[sira[1]] * 100) + ")" : "";
+    if (ret) {
+      $("rakam").textContent = "?"; $("rakam").className = "ret";
+      $("guven").textContent = "Rakam olarak tanınamadı";
+      $("ikinci").textContent = "En yakın tahmin: " + en + " (%" + sayi(p[en] * 100) + ")";
+    } else {
+      $("rakam").textContent = en; $("rakam").className = "var";
+      $("guven").textContent = "Güven: %" + sayi(p[en] * 100);
+      $("ikinci").textContent = p[sira[1]] >= 0.01 ? "İkinci tahmin: " + sira[1] + " (%" + sayi(p[sira[1]] * 100) + ")" : "";
+    }
     for (i = 0; i < 10; i++) {
       cub[i].className = i === en ? "cubuk en" : "cubuk";
       cub[i].children[0].textContent = p[i] >= 0.01 ? Math.round(p[i] * 100) : "";
       cub[i].children[1].firstChild.style.height = (p[i] * 100) + "%";
     }
-    $("cubuklar").setAttribute("aria-label", "En olası rakam " + en + ", güven yüzde " + Math.round(p[en] * 100));
+    $("cubuklar").setAttribute("aria-label", ret ? "Rakam olarak tanınamadı" : "En olası rakam " + en + ", güven yüzde " + Math.round(p[en] * 100));
     $("sureOn").textContent = ms(sOn); $("sureModel").textContent = ms(sModel); $("sureToplam").textContent = ms(sOn + sModel);
     $("hesaplayan").textContent = motor === "ort" ? "onnxruntime-web" : "Yedek hesaplayıcı";
   }
@@ -698,17 +1074,322 @@ var YedekHesaplayici = (function () {
   function tahminYap() {
     if (!istek || !modelAdi || olcumSuruyor) { calisiyor = false; return; }
     istek = false;
-    if (!vuruslar.length) { onizlemeCiz(null); sonucuGoster(null); calisiyor = false; return; }
-    var t0 = performance.now(), g = OnIsleme.cizimden28(vuruslar), t1 = performance.now(), motor = etkinMotor();
-    onizlemeCiz(g);
-    modeliCalistir(g, motor).then(function (skor) {
-      var t2 = performance.now();
-      if (vuruslar.length) sonucuGoster(softmax(skor), t1 - t0, t2 - t1, motor);
-    }, function (h) {
+    if (!vuruslar.length) {
+      onizlemeCiz(null); sonucuGoster(null); sayiSonucunuGoster(null); isiTemizle(); sonTahmin = null; duzeltmeAlani();
+      calisiyor = false; return;
+    }
+    var motor = etkinMotor(), is;
+    if (mod === "sayi") {
+      is = sayiOku(vuruslar, motor).then(function (r) { if (vuruslar.length && mod === "sayi") sayiSonucunuGoster(r); });
+    } else {
+      var t0 = performance.now(), a = OnIsleme.ayrintili(vuruslar), g = a.goruntu, t1 = performance.now();
+      onizlemeCiz(g);
+      is = modeliCalistir(g, motor).then(function (skor) {
+        var t2 = performance.now();
+        if (vuruslar.length && mod === "rakam") {
+          var p = softmax(skor), en = p.indexOf(Math.max.apply(null, p)), ret = rakamDegilMi(skor);
+          sonucuGoster(p, t1 - t0, t2 - t1, motor, ret);
+          if (isiAcik) isiHaritasiCiz(g, a.donusum, en);
+          if (!sonTahmin || !sonTahmin.kaydedildi) {
+            sonTahmin = { g28: g, p: p, en: en, ret: ret, motor: motor, model: modelAdi, vuruslar: vuruslar, kaydedildi: false };
+          }
+          duzeltmeAlani();
+        }
+      });
+    }
+    is.then(null, function (h) {
       $("motorDurum").className = "durum uyari"; $("motorDurum").textContent = "Tahmin yapılamadı: " + (h && h.message || h);
     }).then(function () {
       if (istek) requestAnimationFrame(tahminYap); else calisiyor = false;
     });
+  }
+
+  // ---------- Grad-CAM isi haritasi ----------
+  // Isi haritasi 32 bit modelle hesaplanir (8 bit modelde nicemleme adimlari turevi bozar). Tahminler iki modelde
+  // dokunmatik test kumesindeki 16.087 cizimin 16.081'inde aynidir.
+  var isiAcik = false, isiKatman = $("isi"), isiCtx = isiKatman.getContext("2d");
+  function gradcamModeli(ad) {
+    var a = (ad || modelAdi).replace("_int8", "");
+    return MODELLER[a] ? jsModeli(a) : null;
+  }
+  function gradcamHesapla(g28, sinif, ad) {
+    var m = gradcamModeli(ad); if (!m) return null;
+    var x = new Float32Array(784);
+    for (var i = 0; i < 784; i++) x[i] = g28[i] / 255;
+    return m.gradcam(x, sinif);
+  }
+  function isiTemizle() { isiCtx.setTransform(1, 0, 0, 1, 0, 0); isiCtx.clearRect(0, 0, isiKatman.width, isiKatman.height); }
+  function isiHaritasiCiz(g28, d, sinif) {
+    isiTemizle();
+    var sonuc = d && gradcamHesapla(g28, sinif); if (!sonuc) return;
+    var cam = sonuc.cam, r = tuval.getBoundingClientRect(), N = 72, kucuk = document.createElement("canvas");
+    kucuk.width = kucuk.height = N;
+    var kc = kucuk.getContext("2d"), img = kc.createImageData(N, N);
+    for (var j = 0; j < N; j++) for (var i = 0; i < N; i++) {
+      // tuvaldeki nokta -> 28x28 goruntudeki konum
+      var X = (i + 0.5) * r.width / N, Y = (j + 0.5) * r.height / N;
+      var px = (X - d.x0) * d.olcek + d.bosluk - d.c0, py = (Y - d.y0) * d.olcek + d.bosluk - d.r0;
+      var u = px * d.ox + d.sol + d.dx - 0.5, v = py * d.oy + d.ust + d.dy - 0.5, deger = 0;
+      if (u > -1 && v > -1 && u < 28 && v < 28) {
+        var u0 = Math.floor(u), v0 = Math.floor(v), fu = u - u0, fv = v - v0;
+        var al = function (yy, xx) { return (yy < 0 || xx < 0 || yy > 27 || xx > 27) ? 0 : cam[yy * 28 + xx]; };
+        deger = al(v0, u0) * (1 - fu) * (1 - fv) + al(v0, u0 + 1) * fu * (1 - fv) + al(v0 + 1, u0) * (1 - fu) * fv + al(v0 + 1, u0 + 1) * fu * fv;
+      }
+      var k = 4 * (j * N + i);
+      if (deger > 0.15) {
+        // maviden kirmiziya (dusuk -> yuksek)
+        var renk = deger < 0.5 ? [Math.round(510 * deger), Math.round(160 + 190 * deger), Math.round(255 * (1 - 2 * deger) + 40)]
+                               : [255, Math.round(255 * (2 - 2 * deger)), 0];
+        img.data[k] = renk[0]; img.data[k + 1] = Math.min(255, renk[1]); img.data[k + 2] = Math.max(0, renk[2]);
+        img.data[k + 3] = Math.round(255 * (0.25 + 0.4 * deger));
+      }
+    }
+    kc.putImageData(img, 0, 0);
+    var dpr = window.devicePixelRatio || 1;
+    isiKatman.width = Math.round(r.width * dpr); isiKatman.height = Math.round(r.height * dpr);
+    isiCtx.imageSmoothingEnabled = true;
+    isiCtx.drawImage(kucuk, 0, 0, isiKatman.width, isiKatman.height);
+  }
+  $("acikla").addEventListener("click", function () {
+    isiAcik = !isiAcik;
+    this.setAttribute("aria-pressed", isiAcik ? "true" : "false");
+    isiKatman.className = isiAcik ? "acik" : ""; $("isiAciklama").className = isiAcik ? "isi-aciklama acik" : "isi-aciklama";
+    if (!isiAcik) isiTemizle();
+    tahminIste();
+  });
+
+  // ---------- sayi / islem modu (IG-10) ----------
+  var mod = "rakam";
+  function sayiOku(vs, motor) {
+    var gruplar = SayiOkuma.grupla(vs), semboller = [];
+    return gruplar.reduce(function (zincir, g) {
+      return zincir.then(function () {
+        var is = SayiOkuma.isaret(g);
+        if (is) { semboller.push({ tur: "isaret", deger: is, kutu: g.kutu }); return; }
+        var x = OnIsleme.cizimden28(g.vuruslar);
+        return modeliCalistir(x, motor).then(function (skor) {
+          var p = softmax(skor), en = p.indexOf(Math.max.apply(null, p));
+          semboller.push({ tur: "rakam", deger: String(en), guven: p[en], supheli: rakamDegilMi(skor), kutu: g.kutu, goruntu: x });
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      var h = SayiOkuma.hesapla(semboller);
+      return { semboller: semboller, metin: h.metin, sonuc: h.sonuc, hata: h.hata };
+    });
+  }
+  function sayiYaz(x) {
+    if (!isFinite(x)) return "çok büyük";
+    return (x < 0 ? SayiOkuma.EKSI : "") + Math.abs(x).toLocaleString("tr-TR", { maximumFractionDigits: 0 });
+  }
+  function sayiSonucunuGoster(r) {
+    var o = $("okunan"), n = $("okunanNot"), s = $("semboller");
+    s.innerHTML = "";
+    if (!r || !r.semboller.length) {
+      o.className = "bos"; o.textContent = "Sayı ya da işlem yazın";
+      n.textContent = "Örnek: 125 + 37. Sembollerin arasında biraz boşluk bırakın.";
+      if (mod === "sayi") isiTemizle();
+      return;
+    }
+    var supheli = r.semboller.filter(function (x) { return x.supheli; }).length;
+    o.className = ""; o.textContent = r.metin + (r.sonuc !== null ? " = " + sayiYaz(r.sonuc) : "");
+    n.textContent = r.hata ? r.hata : (supheli ? supheli + " rakamdan emin değil (turuncu)" : (r.sonuc === null ? "Okunan sayı" : "İşlemin sonucu"));
+    r.semboller.forEach(function (x) {
+      var d = document.createElement("div");
+      d.className = "sembol" + (x.tur === "isaret" ? " isaret" : "") + (x.supheli ? " supheli" : "");
+      if (x.goruntu) {
+        var c = document.createElement("canvas"); c.width = c.height = 28;
+        var g = c.getContext("2d"), img = g.createImageData(28, 28);
+        for (var i = 0; i < 784; i++) { img.data[4 * i] = img.data[4 * i + 1] = img.data[4 * i + 2] = x.goruntu[i]; img.data[4 * i + 3] = 255; }
+        g.putImageData(img, 0, 0); d.appendChild(c);
+      }
+      var b = document.createElement("b"); b.textContent = x.deger; d.appendChild(b);
+      var t = document.createElement("span"); t.textContent = x.tur === "rakam" ? "%" + Math.round(x.guven * 100) : "işaret"; d.appendChild(t);
+      s.appendChild(d);
+    });
+    // sembollerin tuvaldeki yerleri
+    var r2 = tuval.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    isiKatman.width = Math.round(r2.width * dpr); isiKatman.height = Math.round(r2.height * dpr);
+    isiCtx.setTransform(dpr, 0, 0, dpr, 0, 0); isiCtx.clearRect(0, 0, r2.width, r2.height);
+    isiCtx.lineWidth = 1.5; isiCtx.font = "600 12px system-ui, sans-serif"; isiCtx.textBaseline = "bottom";
+    r.semboller.forEach(function (x) {
+      var k = x.kutu, pay = 6, renk = x.supheli ? "#C2410C" : "#2F4B7C";
+      isiCtx.strokeStyle = renk; isiCtx.fillStyle = renk; isiCtx.setLineDash([4, 3]);
+      isiCtx.strokeRect(k.x0 - pay, k.y0 - pay, k.x1 - k.x0 + 2 * pay, k.y1 - k.y0 + 2 * pay);
+      isiCtx.setLineDash([]); isiCtx.fillText(x.deger, k.x0 - pay, k.y0 - pay - 2);
+    });
+  }
+  function modSec(yeni) {
+    if (yeni === mod) return;
+    mod = yeni;
+    $("modRakam").setAttribute("aria-pressed", mod === "rakam" ? "true" : "false");
+    $("modSayi").setAttribute("aria-pressed", mod === "sayi" ? "true" : "false");
+    document.body.className = mod === "sayi" ? "sayi-modu" : "";
+    isiAcik = false; $("acikla").setAttribute("aria-pressed", "false"); isiKatman.className = ""; $("isiAciklama").className = "isi-aciklama";
+    vuruslar = []; aktif = null; sonGenislik = 0; duzeltSifirla(); isiTemizle(); sayiSonucunuGoster(null);
+    boyutla();
+  }
+  $("modRakam").addEventListener("click", function () { modSec("rakam"); });
+  $("modSayi").addEventListener("click", function () { modSec("sayi"); });
+
+  // ---------- yanlis tahminin duzeltilmesi (IG-09) ----------
+  var SURUM = "7. hafta", YEREL = "rakam-tanima-duzeltmeler", sonTahmin = null, sonGiris = "", sunucu = null;
+  for (var dr = 0; dr < 10; dr++) {
+    var db = document.createElement("button"); db.textContent = dr; db.setAttribute("data-rakam", dr);
+    db.setAttribute("aria-label", "Doğru rakam " + dr); $("duzeltRakamlar").appendChild(db);
+  }
+  function duzeltmeAlani() {
+    var var_ = !!(sonTahmin && vuruslar.length && mod === "rakam");
+    $("duzeltAlan").hidden = !var_;
+    if (var_ && !sonTahmin.kaydedildi) $("duzeltAc").textContent = sonTahmin.ret ? "Bu bir rakamsa hangisi?" : "Tahmin yanlış mı?";
+  }
+  function duzeltSifirla() {
+    sonTahmin = null; $("duzeltRakamlar").hidden = true; $("duzeltAc").hidden = false;
+    $("duzeltAc").setAttribute("aria-expanded", "false"); $("duzeltDurum").textContent = ""; duzeltmeAlani();
+  }
+  $("duzeltAc").addEventListener("click", function () {
+    var ac = $("duzeltRakamlar").hidden;
+    $("duzeltRakamlar").hidden = !ac; this.setAttribute("aria-expanded", ac ? "true" : "false");
+    $("duzeltDurum").textContent = ac ? "Çizdiğiniz rakamı seçin." : "";
+  });
+  $("duzeltRakamlar").addEventListener("click", function (e) {
+    var r = e.target.getAttribute && e.target.getAttribute("data-rakam");
+    if (r === null || r === undefined || !sonTahmin || sonTahmin.kaydedildi) return;
+    duzeltmeKaydet(Number(r));
+  });
+  function yuvarla1(x) { return Math.round(x * 10) / 10; }
+  function duzeltmeKaydi(dogru) {
+    var t = sonTahmin;
+    return { surum: SURUM, zaman: new Date().toISOString(), model: t.model, hesaplayan: t.motor === "ort" ? "onnxruntime-web" : "yedek",
+             tahmin: t.en, guven: Math.round(t.p[t.en] * 10000) / 10000, rakam_degil: t.ret, dogru: dogru, giris_turu: sonGiris || "bilinmiyor",
+             goruntu: Array.prototype.slice.call(t.g28),
+             vuruslar: t.vuruslar.map(function (v) { return v.map(function (p) { return [yuvarla1(p[0]), yuvarla1(p[1])]; }); }) };
+  }
+  function yerelOku() { try { return JSON.parse(localStorage.getItem(YEREL) || "[]"); } catch (h) { return []; } }
+  function yerelYaz(liste) { try { localStorage.setItem(YEREL, JSON.stringify(liste)); return true; } catch (h) { return false; } }
+  function yerelSayiGoster() {
+    var n = yerelOku().length;
+    $("yerelSayi").textContent = n; $("duzeltmeIndir").disabled = $("duzeltmeSil").disabled = n === 0;
+  }
+  function duzeltmeKaydet(dogru) {
+    var k = duzeltmeKaydi(dogru), durum = function (m) { $("duzeltDurum").textContent = m; };
+    sonTahmin.kaydedildi = true; $("duzeltRakamlar").hidden = true; $("duzeltAc").hidden = true;
+    function yerel(neden) {
+      var l = yerelOku(); l.push(k); if (l.length > 500) l = l.slice(-500);
+      var tamam = yerelYaz(l); yerelSayiGoster();
+      durum(tamam ? "Düzeltme (" + dogru + ") bu cihazda kaydedildi." + (neden ? " " + neden : "") : "Düzeltme kaydedilemedi: tarayıcı veri saklamaya izin vermiyor.");
+    }
+    if (!sunucu) return yerel("");
+    durum("Kaydediliyor…");
+    zamanAsimi(fetch("api/geri-bildirim", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(k) }), 8000, "zaman aşımı")
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (c) { durum("Düzeltme (" + dogru + ") sunucuya kaydedildi. Teşekkürler!"); },
+            function () { yerel("Sunucuya ulaşılamadı."); });
+  }
+  $("duzeltmeIndir").addEventListener("click", function () {
+    var l = yerelOku(); if (!l.length) return;
+    var t = new Date(), iki = function (n) { return (n < 10 ? "0" : "") + n; };
+    var ad = "duzeltmeler_" + t.getFullYear() + iki(t.getMonth() + 1) + iki(t.getDate()) + "-" + iki(t.getHours()) + iki(t.getMinutes()) + ".json";
+    var blob = new Blob([JSON.stringify({ proje: "El Yazısı Rakam Tanıma Projesi - 41.GRUP", tur: "duzeltmeler", surum: SURUM, kayitlar: l })], { type: "application/json" });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = ad;
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  });
+  var silOnay = null;
+  $("duzeltmeSil").addEventListener("click", function () {
+    var d = this;
+    if (!silOnay) { d.textContent = "Silmek için tekrar basın"; silOnay = setTimeout(function () { silOnay = null; d.textContent = "Cihazdan sil"; }, 3000); return; }
+    clearTimeout(silOnay); silOnay = null; d.textContent = "Cihazdan sil";
+    try { localStorage.removeItem(YEREL); } catch (h) { }
+    yerelSayiGoster();
+  });
+
+  // ---------- fotograftan okuma (IG-11, sunucuda) ----------
+  function fotoDurum(m) { $("fotoDurum").textContent = m; }
+  function fotoHazirla(dosya) {      // fotograf tarayicida dondurulup (cihazin cekim yonu) en fazla 1600 piksele kucultulur
+    return new Promise(function (coz, reddet) {
+      var img = new Image(), url = URL.createObjectURL(dosya);
+      img.onload = function () {
+        var o = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement("canvas");
+        c.width = Math.round(img.naturalWidth * o); c.height = Math.round(img.naturalHeight * o);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        c.toBlob(function (b) { if (b) coz({ tuval: c, blob: b }); else reddet(new Error("fotoğraf dönüştürülemedi")); }, "image/jpeg", 0.92);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reddet(new Error("dosya fotoğraf olarak açılamadı")); };
+      img.src = url;
+    });
+  }
+  function fotoGoster(kaynak, s, sure) {
+    var c = $("fotoTuval"), g = c.getContext("2d"), n = 0, sup = 0, k = kaynak.width / s.genislik;
+    c.width = kaynak.width; c.height = kaynak.height; g.drawImage(kaynak, 0, 0);
+    var kal = Math.max(2, c.width / 320);
+    g.lineWidth = kal; g.font = "700 " + Math.round(kal * 9) + "px system-ui, sans-serif"; g.textBaseline = "bottom";
+    s.satirlar.forEach(function (satir) {
+      satir.rakamlar.forEach(function (r) {
+        var b = r.kutu, renk = r.emin_degil ? "#EA580C" : "#2563EB"; n++; if (r.emin_degil) sup++;
+        g.strokeStyle = g.fillStyle = renk;
+        g.strokeRect(b[0] * k, b[1] * k, b[2] * k, b[3] * k); g.fillText(String(r.rakam), b[0] * k, b[1] * k - kal);
+      });
+    });
+    c.hidden = false;
+    $("fotoMetin").textContent = s.metin || "Rakam bulunamadı";
+    fotoDurum(n ? n + " rakam okundu" + (sup ? ", " + sup + " tanesinden emin değil (turuncu)" : "") + " · " + ms(sure) : "Fotoğrafta rakam bulunamadı.");
+  }
+  $("fotoSec").addEventListener("change", function () {
+    var f = this.files && this.files[0]; this.value = "";
+    if (!f || !sunucu) return;
+    fotoDurum("Fotoğraf hazırlanıyor…"); $("fotoMetin").textContent = "";
+    fotoHazirla(f).then(function (h) {
+      fotoDurum("Sunucuda okunuyor…");
+      var fd = new FormData(); fd.append("fotograf", h.blob, "fotograf.jpg");
+      var t0 = performance.now();
+      return zamanAsimi(fetch("api/fotograf", { method: "POST", body: fd }), 30000, "sunucu 30 saniyede yanıt vermedi")
+        .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.detail || ("HTTP " + r.status)); return j; }); })
+        .then(function (s) { fotoGoster(h.tuval, s, performance.now() - t0); });
+    }).catch(function (e) { fotoDurum("Okunamadı: " + (e && e.message || e)); });
+  });
+
+  // ---------- sunucu ----------
+  function sunucuDurumunuGoster() {
+    $("sunucuDurum").textContent = sunucu ? "Bağlı (fotoğraftan okuma açık)" : "Yok (düzeltmeler cihazda saklanır)";
+    $("fotoKart").hidden = !sunucu;
+  }
+  function sunucuyuBul() {
+    if (location.protocol === "file:") { sunucuDurumunuGoster(); return; }
+    zamanAsimi(fetch("api/saglik", { cache: "no-store" }), 3000, "zaman aşımı")
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { sunucu = (j && j.durum === "hazir") ? j : null; }, function () { sunucu = null; })
+      .then(sunucuDurumunuGoster);
+  }
+
+  // ---------- telefona kurulum ve internetsiz calisma (PWA) ----------
+  var kurulumIstegi = null;
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); kurulumIstegi = e; $("yukle").hidden = false; });
+  window.addEventListener("appinstalled", function () { kurulumIstegi = null; $("yukle").hidden = true; });
+  $("yukle").addEventListener("click", function () {
+    if (!kurulumIstegi) return;
+    kurulumIstegi.prompt();
+    kurulumIstegi.userChoice.then(function () { kurulumIstegi = null; $("yukle").hidden = true; });
+  });
+  function baglantiDurumu() { $("cevrimdisi").hidden = navigator.onLine !== false; }
+  window.addEventListener("online", baglantiDurumu); window.addEventListener("offline", baglantiDurumu);
+  var pwaDurum = "yok";
+  function pwaDurumunuGoster(m) { $("pwaDurum").textContent = m; }
+  function pwaKontrol() {
+    if (!window.caches) return Promise.resolve({ sayfa: false, ort: false });
+    return caches.keys().then(function (adlar) {
+      var a = adlar.filter(function (x) { return x.indexOf("rakam-sayfa-") === 0; })[0], o = adlar.filter(function (x) { return x.indexOf("rakam-ort-") === 0; })[0];
+      return Promise.all([a ? caches.open(a).then(function (c) { return c.match("./"); }) : null,
+                          o ? caches.open(o).then(function (c) { return c.match(ORT_ADRES + "ort-wasm-simd-threaded.wasm"); }) : null]);
+    }).then(function (r) { return { sayfa: !!(r && r[0]), ort: !!(r && r[1]) }; }, function () { return { sayfa: false, ort: false }; });
+  }
+  if (!("serviceWorker" in navigator) || location.protocol === "file:" || !window.isSecureContext) {
+    pwaDurumunuGoster(location.protocol === "file:" ? "Sayfa dosya olarak açıldı" : "Güvenli bağlantı (https) gerekir");
+  } else {
+    pwaDurumunuGoster("Hazırlanıyor…");
+    navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; })
+      .then(pwaKontrol).then(function (d) {
+        pwaDurum = d.sayfa ? "hazir" : "eksik";
+        pwaDurumunuGoster(!d.sayfa ? "Hazırlanamadı" : (d.ort ? "Hazır" : "Hazır (yedek hesaplayıcıyla)"));
+      }).catch(function (h) { pwaDurum = "hata"; pwaDurumunuGoster("Hazırlanamadı (" + (h && h.message || h) + ")"); });
   }
 
   // ---------- tuval ----------
@@ -727,7 +1408,8 @@ var YedekHesaplayici = (function () {
   }
   function kalemAyari() {
     ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = ctx.fillStyle = "#111";
-    ctx.lineWidth = Math.max(6, tuval.getBoundingClientRect().width * 0.055);
+    var r = tuval.getBoundingClientRect();
+    ctx.lineWidth = Math.max(5, Math.min(r.width, r.height) * (mod === "sayi" ? 0.045 : 0.055));
   }
   function yenidenCiz() {
     var r = tuval.getBoundingClientRect();
@@ -742,13 +1424,14 @@ var YedekHesaplayici = (function () {
   }
   function dugmeler() {
     var bos = vuruslar.length === 0;
-    $("geriAl").disabled = bos; $("temizle").disabled = bos;
+    $("geriAl").disabled = bos; $("temizle").disabled = bos; $("acikla").disabled = bos && !isiAcik;
     $("ipucu").style.display = bos ? "flex" : "none";
   }
   function nokta(e) { var r = tuval.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
   tuval.addEventListener("pointerdown", function (e) {
     if (aktif !== null) return;
     e.preventDefault(); try { tuval.setPointerCapture(e.pointerId); } catch (h) { } aktif = e.pointerId;
+    sonGiris = e.pointerType || ""; duzeltSifirla();
     vuruslar.push([nokta(e)]); yenidenCiz();
   });
   tuval.addEventListener("pointermove", function (e) {
@@ -770,8 +1453,8 @@ var YedekHesaplayici = (function () {
     tuval.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false });
   });
   document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
-  $("temizle").addEventListener("click", function () { vuruslar = []; aktif = null; yenidenCiz(); });
-  $("geriAl").addEventListener("click", function () { vuruslar.pop(); yenidenCiz(); });
+  $("temizle").addEventListener("click", function () { vuruslar = []; aktif = null; duzeltSifirla(); yenidenCiz(); });
+  $("geriAl").addEventListener("click", function () { vuruslar.pop(); duzeltSifirla(); yenidenCiz(); });
   window.addEventListener("resize", function () {
     if (Math.abs(tuval.getBoundingClientRect().width - sonGenislik) > 0.5) boyutla();
   });
@@ -835,7 +1518,7 @@ var YedekHesaplayici = (function () {
           " · tahmin: " + en + " (%" + sayi(p[en] * 100) + ")</p>";
         var tarih = new Date(), iki = function (n) { return (n < 10 ? "0" : "") + n; };
         sonOlcum = [
-          "Rakam Tanıma - hız testi (5. hafta sürümü)",
+          "Rakam Tanıma - hız testi (7. hafta sürümü)",
           "Tarih: " + tarih.getFullYear() + "-" + iki(tarih.getMonth() + 1) + "-" + iki(tarih.getDate()) + " " + iki(tarih.getHours()) + ":" + iki(tarih.getMinutes()),
           "Model: " + b.model + ", " + (/int8/.test(ad) ? "8 bit" : "32 bit") + ", " + sayi(b.dosya_KB) + " KB",
           "Hesaplama: " + motorAdi(motor),
@@ -866,13 +1549,24 @@ var YedekHesaplayici = (function () {
   // ---------- baslat ----------
   if (window.matchMedia && window.matchMedia("(min-width: 681px)").matches) $("ayrinti").open = true;
   modelBilgisiniGoster(); motorDurumunuGoster(); boyutla(); onizlemeCiz(null);
+  baglantiDurumu(); yerelSayiGoster(); sunucuyuBul();
 
   // test betiginin (testler/uygulama_testi.py) kullandigi giris noktasi
   window.Uygulama = {
     modeller: SIRA, hazir: ortHazir.then(function () { return "ort"; }, function () { return "js"; }),
     cizimden28: function (v) { return Array.prototype.slice.call(OnIsleme.cizimden28(v)); },
     skorlar: function (g28, motor, ad) { return modeliCalistir(g28, motor, ad).then(function (s) { return Array.prototype.slice.call(s); }); },
-    ortDurum: function () { return ortDurum; }
+    ortDurum: function () { return ortDurum; },
+    gradcam: function (g28, ad) { var s = gradcamHesapla(g28, undefined, ad); return s ? { cam: Array.prototype.slice.call(s.cam), sinif: s.sinif } : null; },
+    rakamDegil: function (skor, ad) { return rakamDegilMi(skor, ad); },
+    sayiOku: function (v, motor) {
+      return sayiOku(v, motor || etkinMotor()).then(function (r) {
+        return { metin: r.metin, sonuc: r.sonuc, hata: r.hata,
+                 semboller: r.semboller.map(function (x) { return { tur: x.tur, deger: x.deger, guven: x.guven || null, supheli: !!x.supheli }; }) };
+      });
+    },
+    sunucu: function () { return sunucu; },
+    pwa: function () { return pwaKontrol(); }
   };
 })();
 </script>

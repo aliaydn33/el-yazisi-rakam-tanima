@@ -1,2 +1,7 @@
 ﻿model,ornek,dogru,dogruluk_%,hata_sayisi
+2. hafta CNN (QMNIST),1000,960,96.0,40
+3. hafta D1: QMNIST,1000,960,96.0,40
+3. hafta D2: QMNIST + artirma,1000,969,96.9,31
+3. hafta D3: EMNIST,1000,955,95.5,45
+3. hafta D4: EMNIST + artirma,1000,956,95.6,44
 4. hafta secilen model (LeNet-5 benzeri CNN),1000,960,96.0,40

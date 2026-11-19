@@ -1,0 +1,18 @@
+﻿olcut,normal_ort,normal_ss,aykiri_ort,aykiri_ss,p
+Dokunmatik doğrulama|yanlis_ret_%,5.016,0.0,5.016,0.0,
+Dokunmatik doğrulama|dogruluk_%,97.833,0.244,95.892,2.642,0.193
+Dokunmatik doğrulama|kabul_edilenlerde_dogruluk_%,99.271,0.181,97.629,1.546,0.085
+Dokunmatik test|yanlis_ret_%,5.24,0.433,5.132,0.446,0.751
+Dokunmatik test|dogruluk_%,97.246,0.307,95.511,2.738,0.246
+Dokunmatik test|kabul_edilenlerde_dogruluk_%,98.935,0.249,97.33,1.675,0.113
+MNIST test|yanlis_ret_%,3.208,0.279,0.354,0.259,0.0
+MNIST test|dogruluk_%,98.966,0.067,99.014,0.046,0.155
+MNIST test|kabul_edilenlerde_dogruluk_%,99.814,0.047,99.125,0.061,0.0
+Toplanan veri|yanlis_ret_%,9.56,1.05,4.86,1.236,0.003
+Toplanan veri|dogruluk_%,96.1,0.469,94.32,1.999,0.127
+Toplanan veri|kabul_edilenlerde_dogruluk_%,98.917,0.14,96.015,1.734,0.018
+Doğrulama: harf|ret_%,61.654,3.154,96.258,4.048,0.0
+"Doğrulama: Quick, Draw!|ret_%",57.125,5.347,96.907,2.854,0.0
+EMNIST harfleri (rakama benzeyenler hariç)|ret_%,59.876,2.902,96.824,3.463,0.0
+EMNIST harfleri (rakama benzeyenler)|ret_%,24.622,2.278,53.806,10.422,0.004
+"Quick, Draw! (görülmemiş 8 kategori)|ret_%",58.485,6.069,78.32,8.044,0.012

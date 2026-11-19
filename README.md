@@ -6,7 +6,7 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 
 **Uygulama:** https://aliaydn33.github.io/el-yazisi-rakam-tanima/ (çizdiğiniz rakamı tarayıcıda tanır, sunucuya bir şey gönderilmez)
 
-## Durum (5. hafta sonu)
+## Durum (7. hafta sonu)
 
 | Hafta | İş | Durum |
 |---|---|---|
@@ -15,8 +15,8 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 | 3 | Veri artırma, veri toplama sayfası | Tamamlandı |
 | 4 | Model karşılaştırması (5 tohum, istatistiksel testler), EMNIST deneyleri, çizim ekranı | Tamamlandı |
 | 5 | Modelin tarayıcıya taşınması (ONNX), canlı tahmin, uygulamanın ilk sürümü, Drive'a kaydeden veri toplama | Tamamlandı |
-| 6 | "Rakam değil" uyarısı, Grad-CAM | Planlandı |
-| 7 | FastAPI sunucu, PWA | Planlandı |
+| 6 | "Rakam değil" uyarısı, Grad-CAM | Tamamlandı |
+| 7 | FastAPI sunucu, telefona kurulum (PWA), sayı ve işlem okuma, düzeltme kaydı, fotoğraftan okuma | Tamamlandı |
 | 8 | Kullanıcı testi (SUS), istatistiksel karşılaştırma | Planlandı |
 | 9 | Final, demo | Planlandı |
 
@@ -41,10 +41,15 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 6_onnx_donusum.py         5. hafta: modelleri ONNX'e ve 8 bite çevirir, PyTorch ile karşılaştırır
 7_uygulama_olustur.py     5. hafta: ONNX modellerini uygulama sayfasına ekleyip index.html'i üretir
 8_h2_olcumu.py            5. hafta: ekibin topladığı veride H2 ölçümü (güven aralığı, katılımcı bazında sonuçlar)
+9_rakam_degil.py          6. hafta: "rakam değil" uyarısı (EMNIST harfleri ve Quick, Draw! ile)
+10_gradcam.py             6. hafta: Grad-CAM ısı haritaları
+sunucu.py                 7. hafta: FastAPI sunucusu (fotoğraftan okuma, düzeltme kaydı, uygulamanın yayınlanması)
+fotograf_okuma.py         7. hafta: kâğıttaki rakamların fotoğraftan okunması (OpenCV)
 model_yapisi.py           Modeller (MLP, LeNet-5 benzeri CNN, Derin CNN), eğitim ve veri artırma
 ortak.py                  Ön işleme (MNIST biçimine getirme, vuruşları görüntüye çevirme)
 index.html                Uygulama: çizim, canlı tahmin, 10 rakamın olasılıkları, hız testi
 uygulama_sablon.html      index.html'in kaynağı (modeller eklenmeden önceki hali)
+manifest.webmanifest, sw.js, simgeler/   Telefona kurulum ve internetsiz açılma (PWA)
 onnx/                     Uygulamada kullanılan ONNX modelleri
 veri_toplama.html         Veri toplama sayfası (aydınlatma metni, 50 rakam)
 apps_script/              Veri toplama sayfasının Google Apps Script sürümü (çizimler Drive'a kaydedilir)

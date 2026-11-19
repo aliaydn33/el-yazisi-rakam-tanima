@@ -1,0 +1,82 @@
+HAFTA 6 - RAKAM DEGIL UYARISI (H5)
+Tarih: 2026-11-16 14:00  Sure: 5.5 dk
+
+Egitimde kullanilan rakam olmayan cizim: 33872 (EMNIST harfi 16592, Quick, Draw! 17280)
+Secilen yontem: Normal eğitim (dokunmatik dogrulama dogrulugu farki: -1.94 puan)
+
+5 TOHUMUN ORTALAMASI (normal / aykiri ornekle egitim, p: eslestirilmis t testi)
+                                            olcut  normal_ort  normal_ss  aykiri_ort  aykiri_ss     p
+                Dokunmatik doğrulama|yanlis_ret_%       5.016      0.000       5.016      0.000   NaN
+                  Dokunmatik doğrulama|dogruluk_%      97.833      0.244      95.892      2.642 0.193
+Dokunmatik doğrulama|kabul_edilenlerde_dogruluk_%      99.271      0.181      97.629      1.546 0.085
+                     Dokunmatik test|yanlis_ret_%       5.240      0.433       5.132      0.446 0.751
+                       Dokunmatik test|dogruluk_%      97.246      0.307      95.511      2.738 0.246
+     Dokunmatik test|kabul_edilenlerde_dogruluk_%      98.935      0.249      97.330      1.675 0.113
+                          MNIST test|yanlis_ret_%       3.208      0.279       0.354      0.259 0.000
+                            MNIST test|dogruluk_%      98.966      0.067      99.014      0.046 0.155
+          MNIST test|kabul_edilenlerde_dogruluk_%      99.814      0.047      99.125      0.061 0.000
+                       Toplanan veri|yanlis_ret_%       9.560      1.050       4.860      1.236 0.003
+                         Toplanan veri|dogruluk_%      96.100      0.469      94.320      1.999 0.127
+       Toplanan veri|kabul_edilenlerde_dogruluk_%      98.917      0.140      96.015      1.734 0.018
+                            Doğrulama: harf|ret_%      61.654      3.154      96.258      4.048 0.000
+                    Doğrulama: Quick, Draw!|ret_%      57.125      5.347      96.907      2.854 0.000
+ EMNIST harfleri (rakama benzeyenler hariç)|ret_%      59.876      2.902      96.824      3.463 0.000
+       EMNIST harfleri (rakama benzeyenler)|ret_%      24.622      2.278      53.806     10.422 0.004
+       Quick, Draw! (görülmemiş 8 kategori)|ret_%      58.485      6.069      78.320      8.044 0.012
+
+UYGULAMA MODELI (8 bit ONNX)
+  esik: 0.96
+  Dokunmatik doğrulama|yanlis_ret_%: 5.02
+  Dokunmatik doğrulama|dogruluk_%: 98.02
+  Dokunmatik doğrulama|kabul_edilenlerde_dogruluk_%: 99.45
+  Dokunmatik test|yanlis_ret_%: 5.77
+  Dokunmatik test|dogruluk_%: 97.47
+  Dokunmatik test|kabul_edilenlerde_dogruluk_%: 99.10
+  MNIST test|yanlis_ret_%: 3.59
+  MNIST test|dogruluk_%: 99.02
+  MNIST test|kabul_edilenlerde_dogruluk_%: 99.91
+  Toplanan veri|yanlis_ret_%: 10.50
+  Toplanan veri|dogruluk_%: 96.00
+  Toplanan veri|kabul_edilenlerde_dogruluk_%: 98.88
+  EMNIST harfleri (rakama benzeyenler hariç)|ret_%: 62.24
+  EMNIST harfleri (rakama benzeyenler)|ret_%: 27.05
+  Quick, Draw! (görülmemiş 8 kategori)|ret_%: 58.58
+
+H5: rakam olmayanlarda ret (harf + Quick, Draw! ortalamasi) %60.4 (hedef >= %80), dokunmatik testte yanlis ret %5.8 (hedef <= %5)
+
+HARF VE KATEGORI BAZINDA RET (%)
+        grup          ad  cizim  rakama_benzer  ret_normal_%  ret_uygulama_%
+        Harf           A    800          False          65.8            65.6
+        Harf           B    800           True          36.8            36.8
+        Harf           C    800          False          68.8            68.4
+        Harf           D    800          False          54.4            54.8
+        Harf           E    800          False          51.7            51.2
+        Harf           F    800          False          83.5            83.4
+        Harf           G    800           True          39.0            38.8
+        Harf           H    800          False          59.9            60.2
+        Harf           I    800           True          18.4            18.4
+        Harf           J    800          False          71.9            71.1
+        Harf           K    800          False          59.0            59.1
+        Harf           L    800           True          24.2            24.2
+        Harf           M    800          False          76.4            76.4
+        Harf           N    800          False          63.2            63.0
+        Harf           O    800           True           2.2             2.1
+        Harf           P    800          False          79.0            78.9
+        Harf           Q    800           True          51.2            50.7
+        Harf           R    800          False          68.0            68.2
+        Harf           S    800           True          24.5            23.9
+        Harf           T    800          False          39.2            39.4
+        Harf           U    800          False          27.3            27.5
+        Harf           V    800          False          64.0            64.1
+        Harf           W    800          False          61.5            61.8
+        Harf           X    800          False          78.1            78.1
+        Harf           Y    800          False          49.8            49.1
+        Harf           Z    800           True          22.1            21.5
+Quick, Draw!     diamond    500          False          56.4            56.6
+Quick, Draw!    envelope    500          False          66.4            66.6
+Quick, Draw!         key    500          False          60.0            59.6
+Quick, Draw!   lightning    500          False          64.8            64.6
+Quick, Draw!        moon    500          False          53.6            54.0
+Quick, Draw! smiley face    500          False          39.0            39.0
+Quick, Draw!    squiggle    500          False          68.0            68.4
+Quick, Draw!    umbrella    500          False          60.0            59.8

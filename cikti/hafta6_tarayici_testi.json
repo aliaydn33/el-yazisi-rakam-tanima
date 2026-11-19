@@ -1,0 +1,24 @@
+{
+  "gradcam": {
+    "ornek": 250,
+    "ayni_sinif_%": 100.0,
+    "en_buyuk_fark": 1e-06,
+    "ortalama_fark": 1e-07,
+    "en_dusuk_korelasyon": 1.0
+  },
+  "rakam_degil_secilen_int8.onnx": {
+    "ornek": 600,
+    "hesaplama": "ort",
+    "yontem": "msp",
+    "ayni_karar_%": 100.0,
+    "tarayicida_ret_%": 29.2
+  },
+  "rakam_degil_derin_int8.onnx": {
+    "ornek": 600,
+    "hesaplama": "ort",
+    "yontem": "msp",
+    "ayni_karar_%": 100.0,
+    "tarayicida_ret_%": 29.7
+  },
+  "sayfa_hatalari": []
+}

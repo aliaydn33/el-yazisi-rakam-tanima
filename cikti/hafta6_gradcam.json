@@ -1,0 +1,25 @@
+{
+  "LeNet-5 benzeri CNN": {
+    "cizim": 2000,
+    "silinen_murekkep_orani": 0.2,
+    "dogruluk_ilk_%": 97.2,
+    "dogruluk_gradcam_silme_%": 85.75,
+    "dogruluk_rastgele_silme_%": 96.2,
+    "guven_ilk": 0.986,
+    "guven_gradcam_silme": 0.846,
+    "guven_rastgele_silme": 0.962,
+    "camin_murekkepte_kalan_orani": 0.281
+  },
+  "Derin CNN": {
+    "cizim": 2000,
+    "silinen_murekkep_orani": 0.2,
+    "dogruluk_ilk_%": 97.25,
+    "dogruluk_gradcam_silme_%": 64.35,
+    "dogruluk_rastgele_silme_%": 93.7,
+    "guven_ilk": 0.992,
+    "guven_gradcam_silme": 0.642,
+    "guven_rastgele_silme": 0.934,
+    "camin_murekkepte_kalan_orani": 0.288
+  },
+  "toplanan_9_hatasi": 21
+}

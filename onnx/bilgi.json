@@ -8,7 +8,13 @@
     "mnist_test_%": 99.0,
     "dokunmatik_test_%": 97.48,
     "pytorch_ile_ayni_%": 100.0,
-    "secilen": true
+    "secilen": true,
+    "egitim": "Normal eğitim",
+    "rakam_degil": {
+      "yontem": "msp",
+      "esik": 0.9624,
+      "dogrulama_yanlis_ret": 0.05
+    }
   },
   "secilen_int8.onnx": {
     "model": "LeNet-5 benzeri CNN",
@@ -19,7 +25,13 @@
     "mnist_test_%": 99.02,
     "dokunmatik_test_%": 97.47,
     "pytorch_ile_ayni_%": 99.96,
-    "secilen": true
+    "secilen": true,
+    "egitim": "Normal eğitim",
+    "rakam_degil": {
+      "yontem": "msp",
+      "esik": 0.9616,
+      "dogrulama_yanlis_ret": 0.05
+    }
   },
   "derin.onnx": {
     "model": "Derin CNN",
@@ -30,7 +42,12 @@
     "mnist_test_%": 99.13,
     "dokunmatik_test_%": 97.2,
     "pytorch_ile_ayni_%": 100.0,
-    "secilen": false
+    "secilen": false,
+    "rakam_degil": {
+      "yontem": "msp",
+      "esik": 0.9787,
+      "dogrulama_yanlis_ret": 0.05
+    }
   },
   "derin_int8.onnx": {
     "model": "Derin CNN",
@@ -41,6 +58,11 @@
     "mnist_test_%": 99.13,
     "dokunmatik_test_%": 97.19,
     "pytorch_ile_ayni_%": 99.98,
-    "secilen": false
+    "secilen": false,
+    "rakam_degil": {
+      "yontem": "msp",
+      "esik": 0.9798,
+      "dogrulama_yanlis_ret": 0.05
+    }
   }
 }
