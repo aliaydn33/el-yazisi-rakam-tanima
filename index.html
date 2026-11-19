@@ -944,12 +944,12 @@ var SayiOkuma = (function () {
 /* ============================================================================================
    FOTOGRAFTAN OKUMA (IG-11): kagida yazilmis rakamlar telefonda, internet olmadan okunur
    fotograf_okuma.py ile ayni adimlar (adimlarin aciklamasi orada):
-     kagidin parlakligini kestirip bolme -> Otsu ve cift esik -> bagli bilesenler -> kopukluklarin kapatilmasi
+     kagidin bulunmasi -> kagidin parlakligini kestirip bolme -> Otsu ve cift esik -> bagli bilesenler -> kopukluklarin kapatilmasi
      -> parcalarin birlestirilmesi -> satirlar -> cizgi kalinliginin ayarlanmasi -> 28x28 -> model
    ============================================================================================ */
 var FotografOkuma = (function () {
   "use strict";
-  var HEDEF_KALINLIK = 0.13, FLT_EPSILON = 1.1920928955078125e-07;
+  var HEDEF_KALINLIK = 0.13, FLT_EPSILON = 1.1920928955078125e-07, KOYU_ORAN = 0.0005, ZAYIF_ORAN = 0.3;
 
   function rint(x) { var f = Math.floor(x), d = x - f; return d > 0.5 ? f + 1 : (d < 0.5 ? f : (f % 2 === 0 ? f : f + 1)); }
   function diskOfsetleri(k) {
@@ -1026,22 +1026,56 @@ var FotografOkuma = (function () {
     }
     return esik;
   }
-  function murekkepMaskesi(gri, W, H) {
+  function yuzdelik(hist, toplam, oran) {        // degerlerin 'oran' kadarinin altinda kaldigi en kucuk deger
+    var hedef = Math.ceil(oran * toplam), birikim = 0;
+    for (var i = 0; i < hist.length; i++) { birikim += hist[i]; if (birikim >= hedef) return i; }
+    return hist.length - 1;
+  }
+  // fotografta masa ya da baska seyler de gorunuyorsa kagidin oldugu bolge (parlak ve renksiz en buyuk parca), yoksa null
+  function kagitMaskesi(rgba, W, H) {
+    var N = W * H, i, hist = new Float64Array(256), aday = new Uint8Array(N);
+    for (i = 0; i < N; i++) { var r = rgba[4 * i], g = rgba[4 * i + 1], b = rgba[4 * i + 2]; hist[Math.max(r, g, b)]++; }
+    var p95 = yuzdelik(hist, N, 0.95);
+    for (i = 0; i < N; i++) {
+      var r2 = rgba[4 * i], g2 = rgba[4 * i + 1], b2 = rgba[4 * i + 2], en = Math.max(r2, g2, b2), ek = Math.min(r2, g2, b2);
+      aday[i] = (en * 100 >= 55 * p95 && (en - ek) * 100 <= 25 * en) ? 1 : 0;
+    }
+    var k = Math.max(5, Math.floor(Math.min(H, W) / 100)) | 1;
+    aday = kareSuzgec(kareSuzgec(aday, W, H, k, true), W, H, k, false);
+    var b3 = bilesenler(aday, W, H), enBuyuk = -1, enAlan = 0;
+    b3.ist.forEach(function (s, j) { if (s.alan > enAlan) { enAlan = s.alan; enBuyuk = j + 1; } });
+    if (enBuyuk < 0 || enAlan < 0.15 * N) return null;
+    var kagit = new Uint8Array(N), ulasilan = new Uint8Array(N), yigin = new Int32Array(N), ust = 0, x, y;
+    for (i = 0; i < N; i++) kagit[i] = b3.etiket[i] === enBuyuk ? 1 : 0;
+    function ekle(q) { if (!kagit[q] && !ulasilan[q]) { ulasilan[q] = 1; yigin[ust++] = q; } }
+    for (x = 0; x < W; x++) { ekle(x); ekle((H - 1) * W + x); }
+    for (y = 0; y < H; y++) { ekle(y * W); ekle(y * W + W - 1); }
+    while (ust > 0) {                             // kenardan ulasilabilen bosluklar kagidin disidir, digerleri delik
+      var q = yigin[--ust]; x = q % W; y = (q - x) / W;
+      if (x > 0) ekle(q - 1); if (x < W - 1) ekle(q + 1); if (y > 0) ekle(q - W); if (y < H - 1) ekle(q + W);
+    }
+    var say = 0;
+    for (i = 0; i < N; i++) { if (!kagit[i] && !ulasilan[i]) kagit[i] = 1; say += kagit[i]; }
+    if (say >= 0.97 * N) return null;
+    return kareSuzgec(kagit, W, H, Math.max(3, Math.floor(Math.min(H, W) / 100)) | 1, false);
+  }
+  function murekkepMaskesi(gri, W, H, kagit) {
     var N = W * H, k = Math.max(15, Math.floor(Math.min(W, H) / 12)) | 1, i, x, y;
     var zemin = kareSuzgec(kareSuzgec(gri, W, H, k, true), W, H, k, false);
-    var duz = new Float64Array(N);
+    var duz = new Uint8Array(N);                  // degerler 0-255 arasi tam sayi (bellek az kullanilsin)
     for (i = 0; i < N; i++) duz[i] = zemin[i] > 0 ? Math.min(rint(gri[i] * 255 / zemin[i]), 255) : 0;
     var yan = function (v, n) { return v < 0 ? -v : (v >= n ? 2 * n - 2 - v : v); };   // kenarda yansitma
-    var yat = new Float64Array(N), yum = new Uint8Array(N), hist = new Float64Array(256);
+    var yat = new Uint16Array(N), yum = new Uint8Array(N), hist = new Float64Array(256), secilen = 0;
     for (y = 0; y < H; y++) for (x = 0; x < W; x++) yat[y * W + x] = duz[y * W + yan(x - 1, W)] + 2 * duz[y * W + x] + duz[y * W + yan(x + 1, W)];
     for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
       var v = Math.floor((yat[yan(y - 1, H) * W + x] + 2 * yat[y * W + x] + yat[yan(y + 1, H) * W + x]) / 16 + 0.5);
-      yum[y * W + x] = v; hist[v]++;
+      yum[y * W + x] = v;
+      if (!kagit || kagit[y * W + x]) { hist[v]++; secilen++; }
     }
-    var esik = Math.min(otsu(hist, N), 200);
-    var hedef = Math.ceil(0.9 * N), birikim = 0, p90 = 255;
-    for (i = 0; i < 256; i++) { birikim += hist[i]; if (birikim >= hedef) { p90 = i; break; } }
-    var zayifEsik = esik + 0.45 * (p90 - esik), zayif = new Uint8Array(N);
+    // esik en koyu piksellerle kagidin ortasindan daha acik olamaz (defter cizgileri murekkep sayilmasin)
+    var esik = Math.min(otsu(hist, secilen), (yuzdelik(hist, secilen, KOYU_ORAN) + yuzdelik(hist, secilen, 0.5)) / 2, 200);
+    var p90 = yuzdelik(hist, secilen, 0.9);
+    var zayifEsik = esik + ZAYIF_ORAN * (p90 - esik), zayif = new Uint8Array(N);
     for (i = 0; i < N; i++) zayif[i] = yum[i] < zayifEsik ? 1 : 0;
     var b = bilesenler(zayif, W, H), tut = new Uint8Array(b.n + 1), m = new Uint8Array(N);
     for (i = 0; i < N; i++) if (yum[i] < esik && b.etiket[i]) tut[b.etiket[i]] = 1;
@@ -1056,7 +1090,7 @@ var FotografOkuma = (function () {
     for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
       i = y * W + x; var u = a[i];
       if (x > 0) u |= a[i - 1]; if (y > 0) u |= a[i - W]; if (x > 0 && y > 0) u |= a[i - W - 1];
-      c[i] = u;
+      c[i] = kagit ? (u & kagit[i]) : u;
     }
     return c;
   }
@@ -1153,8 +1187,8 @@ var FotografOkuma = (function () {
     return OnIsleme.mnistBicimi({ gri: g, w: PW, h: PH });
   }
   // gri: Uint8Array (W*H). Donus: { satirlar: [{kutular}], x28: [Uint8Array] }
-  function ayir(gri, W, H) {
-    var m = murekkepMaskesi(gri, W, H), h = rakamYuksekligi(m, W, H);
+  function ayir(gri, W, H, rgba) {
+    var m = murekkepMaskesi(gri, W, H, rgba ? kagitMaskesi(rgba, W, H) : null), h = rakamYuksekligi(m, W, H);
     if (h) m = kapama(m, W, H, Math.max(3, Math.floor(0.08 * h + 0.5)) | 1);
     var p = parcalar(m, W, H), kutular = birlestir(p.kutular, h || 1), satirlar = satirlaraAyir(kutular), x28 = [];
     satirlar.forEach(function (s) { s.kutular.forEach(function (k) { x28.push(rakamGoruntusu(p.etiket, W, k)); }); });
@@ -1599,8 +1633,8 @@ var FotografOkuma = (function () {
     });
   }
   // gri goruntudeki rakamlari ayirip modelle okur (fotograf_okuma.py'deki FotografOkuyucu.gri_oku ile ayni cikti)
-  function fotografiOku(gri, W, H, motor) {
-    var a = FotografOkuma.ayir(gri, W, H), skorlar = [];
+  function fotografiOku(gri, W, H, motor, rgba) {
+    var a = FotografOkuma.ayir(gri, W, H, rgba), skorlar = [];
     return a.x28.reduce(function (z, x) {
       return z.then(function () { return modeliCalistir(x, motor).then(function (s) { skorlar.push(s); }); });
     }, Promise.resolve()).then(function () {
@@ -1622,7 +1656,7 @@ var FotografOkuma = (function () {
   }
   function tuvaldenOku(c, motor) {
     var veri = c.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, c.width, c.height).data;
-    return fotografiOku(FotografOkuma.griyeCevir(veri, c.width * c.height), c.width, c.height, motor || etkinMotor());
+    return fotografiOku(FotografOkuma.griyeCevir(veri, c.width * c.height), c.width, c.height, motor || etkinMotor(), veri);
   }
   function fotoGoster(kaynak, s, sure) {
     var c = $("fotoTuval"), g = c.getContext("2d"), n = 0, sup = 0;
@@ -1879,8 +1913,10 @@ var FotografOkuma = (function () {
       });
     },
     sunucu: function () { return sunucu; },
-    fotografGri: function (gri, W, H, motor) {
-      return fotografiOku(Uint8Array.from(gri), W, H, motor || etkinMotor()).then(function (s) {
+    fotografGri: function (gri, W, H, motor, rgb) {
+      var rgba = null;
+      if (rgb) { rgba = new Uint8Array(W * H * 4); for (var i = 0; i < W * H; i++) { rgba[4 * i] = rgb[3 * i]; rgba[4 * i + 1] = rgb[3 * i + 1]; rgba[4 * i + 2] = rgb[3 * i + 2]; rgba[4 * i + 3] = 255; } }
+      return fotografiOku(Uint8Array.from(gri), W, H, motor || etkinMotor(), rgba).then(function (s) {
         s.satirlar.forEach(function (x) { x.rakamlar.forEach(function (r) { delete r.goruntu; }); }); return s;
       });
     },

@@ -31,4 +31,4 @@ python -m playwright install chromium
 python testler/hafta7_testi.py
 ```
 
-Test sunucuyu kendisi başlatır, 200 fotoğraf ve 630 sayı/işlem örneği hazırlar. Sonuçlar `cikti/hafta7_testi.json` dosyasına yazılır.
+Test sunucuyu kendisi başlatır, 200 normal ve 100 zor fotoğraf (kareli ve çizgili defter, masada kâğıt, küçük rakamlar) ile 630 sayı/işlem örneği hazırlar. Sonuçlar `cikti/hafta7_testi.json` dosyasına yazılır.

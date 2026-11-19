@@ -15,14 +15,14 @@
       "skor_en_buyuk_fark": 4.999694822593881e-07,
       "dogruluk_%": 97.3,
       "tek_cizim_istek_ms": {
-        "ortalama": 1.1,
-        "medyan": 1.03,
-        "en_yavas_%5": 1.39
+        "ortalama": 1.13,
+        "medyan": 1.06,
+        "en_yavas_%5": 1.38
       },
       "tek_cizim_model_ms": {
-        "ortalama": 0.21,
-        "medyan": 0.19,
-        "en_yavas_%5": 0.28
+        "ortalama": 0.22,
+        "medyan": 0.2,
+        "en_yavas_%5": 0.31
       }
     },
     "tahmin_hatali_istek": {
@@ -53,7 +53,7 @@
     }
   },
   "tarayici": {
-    "ilk_acilis_sn": 1.76,
+    "ilk_acilis_sn": 1.99,
     "pwa": {
       "motor": "ort",
       "onbellek": {
@@ -76,7 +76,7 @@
     "fotograf_arayuz": {
       "beklenen": "3068/9162",
       "okunan": "3068/9162",
-      "durum": "8 rakam okundu, 1 tanesinden emin değil (turuncu) · 244,1 ms"
+      "durum": "8 rakam okundu, 1 tanesinden emin değil (turuncu) · 349,1 ms"
     },
     "internetsiz": {
       "sayfa_acildi": true,
@@ -106,7 +106,7 @@
         "tam_dogru_%": 90.0,
         "rakam_sayisi_dogru_%": 100.0,
         "satir_sayisi_dogru_%": 100.0,
-        "rakam_dogrulugu_%": 97.97,
+        "rakam_dogrulugu_%": 98.06,
         "rakam_toplam": 1183
       },
       "mnist": {
@@ -114,7 +114,7 @@
         "tam_dogru_%": 91.0,
         "rakam_sayisi_dogru_%": 100.0,
         "satir_sayisi_dogru_%": 100.0,
-        "rakam_dogrulugu_%": 98.31,
+        "rakam_dogrulugu_%": 98.48,
         "rakam_toplam": 591
       },
       "toplanan": {
@@ -132,7 +132,7 @@
         "tam_dogru_%": 90.0,
         "rakam_sayisi_dogru_%": 100.0,
         "satir_sayisi_dogru_%": 100.0,
-        "rakam_dogrulugu_%": 97.97,
+        "rakam_dogrulugu_%": 98.06,
         "rakam_toplam": 1183
       },
       "mnist": {
@@ -140,7 +140,7 @@
         "tam_dogru_%": 91.0,
         "rakam_sayisi_dogru_%": 100.0,
         "satir_sayisi_dogru_%": 100.0,
-        "rakam_dogrulugu_%": 98.31,
+        "rakam_dogrulugu_%": 98.48,
         "rakam_toplam": 591
       },
       "toplanan": {
@@ -154,31 +154,69 @@
     },
     "uygulama_python_ayni_kutular_%": 100.0,
     "uygulama_python_ayni_metin_%": 100.0,
+    "gri_donusum_ayni": "200/200",
     "sure": {
       "sunucu_ms": {
-        "ortalama": 55.78,
-        "medyan": 53.95,
-        "en_yavas_%5": 85.0
+        "ortalama": 120.82,
+        "medyan": 118.25,
+        "en_yavas_%5": 182.04
       },
       "istek_ms": {
-        "ortalama": 59.15,
-        "medyan": 57.1,
-        "en_yavas_%5": 89.29
+        "ortalama": 124.19,
+        "medyan": 121.7,
+        "en_yavas_%5": 185.46
       },
       "uygulama_ms": {
-        "ortalama": 151.93,
-        "medyan": 147.6,
-        "en_yavas_%5": 215.2
+        "ortalama": 243.01,
+        "medyan": 243.55,
+        "en_yavas_%5": 343.42
       },
       "uygulama_4kat_yavas_ms": {
-        "ortalama": 647.05,
-        "medyan": 634.7,
-        "en_yavas_%5": 877.93
+        "ortalama": 1059.87,
+        "medyan": 1019.9,
+        "en_yavas_%5": 1493.9
       },
       "fotograf_kb": {
         "ortalama": 82.03,
         "medyan": 71.5,
         "en_yavas_%5": 179.99
+      }
+    },
+    "zor": {
+      "tümü": {
+        "fotograf": 100,
+        "tam_dogru_%": 83.0,
+        "rakam_sayisi_dogru_%": 98.0,
+        "rakam_dogrulugu_%": 95.93,
+        "sunucu_ile_ayni_%": 100.0
+      },
+      "cizgili": {
+        "fotograf": 25,
+        "tam_dogru_%": 88.0,
+        "rakam_sayisi_dogru_%": 100.0,
+        "rakam_dogrulugu_%": 97.37,
+        "sunucu_ile_ayni_%": 100.0
+      },
+      "kareli": {
+        "fotograf": 25,
+        "tam_dogru_%": 92.0,
+        "rakam_sayisi_dogru_%": 100.0,
+        "rakam_dogrulugu_%": 97.14,
+        "sunucu_ile_ayni_%": 100.0
+      },
+      "kucuk": {
+        "fotograf": 25,
+        "tam_dogru_%": 72.0,
+        "rakam_sayisi_dogru_%": 92.0,
+        "rakam_dogrulugu_%": 95.33,
+        "sunucu_ile_ayni_%": 100.0
+      },
+      "masada": {
+        "fotograf": 25,
+        "tam_dogru_%": 80.0,
+        "rakam_sayisi_dogru_%": 100.0,
+        "rakam_dogrulugu_%": 93.97,
+        "sunucu_ile_ayni_%": 100.0
       }
     }
   },

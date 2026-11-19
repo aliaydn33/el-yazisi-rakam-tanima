@@ -5,7 +5,8 @@ Sunucu bu betik icinde ayri bir is parcaciginda baslatilir (geri bildirim kayitl
   1) Sunucu: /api/saglik, /api/model, /api/tahmin (2.000 dokunmatik test cizimi, Python'daki onnxruntime ile
      karsilastirma ve sure), /api/geri-bildirim (gecerli ve hatali kayitlar), proje dosyalarinin disariya kapali
      olmasi.
-  2) Fotograftan okuma (IG-11, E2): hazir_testler.py'nin urettigi fotograflar uygulamanin icinde (telefondaki gibi)
+  2) Fotograftan okuma (IG-11, E2): hazir_testler.py'nin urettigi fotograflar (200 normal, 100 zor: kareli ve cizgili
+     defter, masada kagit, kucuk rakamlar) uygulamanin icinde (telefondaki gibi)
      ve sunucuda (/api/fotograf) okunur, iki sonuc karsilastirilir. Islemci 4 kat yavaslatilarak telefon hizi
      yaklasik olarak denenir. Internet yokken de arayuzden bir fotograf okunur.
   3) PWA (IOG-08, H4): service worker'in kurulmasi, tarayicinin kurulabilirlik denetimi (Chrome DevTools
@@ -143,17 +144,19 @@ def sekiller():
         ax.invert_yaxis(); ax.set_aspect("equal"); ax.axis("off")
         renk = "#1F2937" if sf.tam_dogru[i] else "#C2410C"
         ax.set_title(f"Beklenen: {sf.metin[i]}\nOkunan: {sf.okunan[i]}", fontsize=7, color=renk)
-    for j in range(2):
-        yol = os.path.join(CIKTI, f"hafta7_ornek_fotograf_{j + 1}.jpg")
+    yollar = [os.path.join(CIKTI, "hafta7_ornek_fotograf_1.jpg")] + \
+             [os.path.join(CIKTI, f"hafta7_zor_ornek_{t}.jpg") for t in ("kareli", "masada")]
+    for j, yol in enumerate(yollar):
         img = cv2.imread(yol)
         s = okuyucu.oku(open(yol, "rb").read())
         kutular = [r["kutu"] for satir in s["satirlar"] for r in satir["rakamlar"]]
         for x0, y0, w, h in kutular:
             cv2.rectangle(img, (x0, y0), (x0 + w, y0 + h), (235, 99, 37), max(2, img.shape[1] // 400))
-        k = np.array(kutular); hh = int(np.median(k[:, 3]))          # rakamlarin cevresi kirpilir
-        x0, y0 = max(0, k[:, 0].min() - 2 * hh), max(0, k[:, 1].min() - hh)
-        x1, y1 = min(img.shape[1], (k[:, 0] + k[:, 2]).max() + 2 * hh), min(img.shape[0], (k[:, 1] + k[:, 3]).max() + hh)
-        ax = fig.add_axes([0.02 + j * 0.5, 0.02, 0.46, 0.46])
+        k = np.array(kutular); hh = int(np.median(k[:, 3]))          # rakamlarin cevresi kirpilir (masa butun gorunsun)
+        pay = (2, 4, 100)[j]
+        x0, y0 = max(0, k[:, 0].min() - pay * hh), max(0, k[:, 1].min() - pay * hh // 2)
+        x1, y1 = min(img.shape[1], (k[:, 0] + k[:, 2]).max() + pay * hh), min(img.shape[0], (k[:, 1] + k[:, 3]).max() + pay * hh // 2)
+        ax = fig.add_axes([0.01 + j * 0.333, 0.02, 0.32, 0.46])
         ax.imshow(img[y0:y1, x0:x1, ::-1]); ax.axis("off")
         ax.set_title("Okunan: " + s["metin"].replace("\n", " / "), fontsize=7)
     fig.savefig(os.path.join(CIKTI, "sekil_hafta7_hazir_ornekler.png"), dpi=200); plt.close(fig)
@@ -225,6 +228,7 @@ def main():
     # ------------------------------------------------------------------ 2) fotograftan okuma
     print("Fotograflar hazirlaniyor...")
     fotolar = ht.hazir_fotograflar(args.fotograf, tohum=TOHUM)
+    zor_fotolar = ht.zor_fotograflar(25, tohum=TOHUM)
     satirlar = []
     for i, (jpg, metin, kaynak) in enumerate(fotolar):
         govde, tur = cok_parcali("fotograf", "f.jpg", jpg)
@@ -287,10 +291,28 @@ def main():
         bilgi = json.load(open(os.path.join("onnx", "bilgi.json"), encoding="utf-8"))
         okuyucu = FotografOkuyucu(os.path.join("onnx", "secilen_int8.onnx"), bilgi["secilen_int8.onnx"].get("rakam_degil"))
         adresler = ["data:image/jpeg;base64," + base64.b64encode(jpg).decode() for jpg, _, _ in fotolar]
+        # gri goruntu tarayicida renkliden hesaplanir (OpenCV ile ayni katsayilar); ayniligi ayrica kontrol edilir
+        gri_js = """([r, W, H]) => { const b = atob(r), rgb = new Uint8Array(b.length);
+                     for (let i = 0; i < b.length; i++) rgb[i] = b.charCodeAt(i);
+                     const rgba = new Uint8Array(W * H * 4);
+                     for (let i = 0; i < W * H; i++) { rgba[4*i] = rgb[3*i]; rgba[4*i+1] = rgb[3*i+1]; rgba[4*i+2] = rgb[3*i+2]; }
+                     const g = FotografOkuma.griyeCevir(rgba, W * H);
+                     let t = 0; for (let i = 0; i < W * H; i++) t = (t * 31 + g[i]) % 1000000007;
+                     return Uygulama.fotografGri(g, W, H, 'ort', rgb).then(x => { x.gri_ozet = t; return x; }); }"""
+        def ozet_(g):
+            t = 0
+            for v in g.ravel().tolist():
+                t = (t * 31 + v) % 1000000007
+            return t
+        gri_ayni = 0
         for i, (jpg, metin, kaynak) in enumerate(fotolar):
-            g = cv2.imdecode(np.frombuffer(jpg, np.uint8), cv2.IMREAD_GRAYSCALE)
-            py = okuyucu.gri_oku(g)
-            js = s.evaluate("([g, W, H]) => Uygulama.fotografGri(g, W, H, 'ort')", [g.ravel().tolist(), g.shape[1], g.shape[0]])
+            if i and i % 40 == 0:                             # uzun testte sayfanin bellegi temiz kalsin
+                s.reload(); s.evaluate("Uygulama.hazir")
+            bgr = cv2.imdecode(np.frombuffer(jpg, np.uint8), cv2.IMREAD_COLOR)
+            g = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY); rgb = np.ascontiguousarray(bgr[..., ::-1])
+            py = okuyucu.gri_oku(g, rgb)
+            js = s.evaluate(gri_js, [base64.b64encode(rgb.tobytes()).decode(), g.shape[1], g.shape[0]])
+            gri_ayni += js["gri_ozet"] == ozet_(g)
             u = s.evaluate("a => Uygulama.fotografOku(a, 'ort')", adresler[i])
             kp = [r["kutu"] for x_ in py["satirlar"] for r in x_["rakamlar"]]
             kj = [r["kutu"] for x_ in js["satirlar"] for r in x_["rakamlar"]]
@@ -301,6 +323,20 @@ def main():
                                 "cihaz_dogru_rakam": sum(p_ == q_ for p_, q_ in zip(oku_, hedef)) if len(oku_) == len(hedef) else None,
                                 "cihaz_ms": round(u["sure_ms"], 1), "python_ile_ayni_kutular": kp == kj,
                                 "python_ile_ayni_metin": py["metin"] == js["metin"]})
+        # zor fotograflar (kareli ve cizgili defter, masada kagit, kucuk rakamlar): uygulamada ve sunucuda
+        zor, ornek_kaydedilen = [], set()
+        for i, (jpg, metin, kaynak, tur) in enumerate(zor_fotolar):
+            if i % 40 == 0:
+                s.reload(); s.evaluate("Uygulama.hazir")
+            u = s.evaluate("a => Uygulama.fotografOku(a, 'ort')", "data:image/jpeg;base64," + base64.b64encode(jpg).decode())
+            kod, g_, _ = istek(adres + "/api/fotograf", *cok_parcali("fotograf", "z.jpg", jpg))
+            ou, os_ = u["metin"].replace(" ", ""), g_["metin"].replace(" ", "")
+            zor.append({"tur": tur, "kaynak": kaynak, "beklenen": metin, "uygulama_okunan": ou, "sunucu_okunan": os_,
+                        "tam_dogru": ou == metin, "rakam_sayisi_dogru": len(ou) == len(metin),
+                        "dogru_rakam": sum(a_ == b_ for a_, b_ in zip(ou, metin)) if len(ou) == len(metin) else None,
+                        "rakam": len(metin), "sunucu_ile_ayni": ou == os_})
+            if tur not in ornek_kaydedilen:                  # her turden ilk fotograf sekil icin saklanir
+                ornek_kaydedilen.add(tur); open(os.path.join(CIKTI, f"hafta7_zor_ornek_{tur}.jpg"), "wb").write(jpg)
         # telefon benzetimi: islemci 4 kat yavaslatilarak ilk 20 fotograf
         cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
         yavas = [s.evaluate("a => Uygulama.fotografOku(a, 'ort')", a_)["sure_ms"] for a_ in adresler[:20]]
@@ -386,8 +422,18 @@ def main():
                          "rakam_toplam": int(gr.rakam.sum())}
     fs["uygulama_python_ayni_kutular_%"] = round(f.python_ile_ayni_kutular.mean() * 100, 1)
     fs["uygulama_python_ayni_metin_%"] = round(f.python_ile_ayni_metin.mean() * 100, 1)
+    fs["gri_donusum_ayni"] = f"{gri_ayni}/{len(f)}"
     fs["sure"] = {"sunucu_ms": ozet(f.sunucu_ms), "istek_ms": ozet(f.istek_ms), "uygulama_ms": ozet(f.cihaz_ms),
                   "uygulama_4kat_yavas_ms": ozet(yavas), "fotograf_kb": ozet(f.kb)}
+    z = pd.DataFrame(zor)
+    z.to_csv(os.path.join(CIKTI, "hafta7_zor_fotograf_testi.csv"), index=False, encoding="utf-8-sig")
+    fs["zor"] = {}
+    for k, gr in [("tümü", z)] + list(z.groupby("tur")):
+        tam = gr[gr.rakam_sayisi_dogru]
+        fs["zor"][k] = {"fotograf": len(gr), "tam_dogru_%": round(gr.tam_dogru.mean() * 100, 1),
+                        "rakam_sayisi_dogru_%": round(gr.rakam_sayisi_dogru.mean() * 100, 1),
+                        "rakam_dogrulugu_%": round(tam.dogru_rakam.sum() / tam.rakam.sum() * 100, 2),
+                        "sunucu_ile_ayni_%": round(gr.sunucu_ile_ayni.mean() * 100, 1)}
     sonuc["fotograf"] = fs
     print(json.dumps(fs, ensure_ascii=False, indent=1))
 

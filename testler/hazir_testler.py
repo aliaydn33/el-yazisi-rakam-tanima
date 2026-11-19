@@ -267,3 +267,72 @@ def hazir_fotograflar(n, tohum=0):
         jpg, metin = fotograf_ornegi(satirlar, kaynak, rng)
         sonuc.append((jpg, metin, kaynak))
     return sonuc
+
+
+# ------------------------------------------------------------------------------------------- zor fotograflar
+# Gercek fotograflarda sik gorulen durumlar: kareli ve cizgili defter, kagidin cevresinde masa, fotografta kucuk
+# kalan rakamlar. Ayni sekilde gercek kisilerin rakamlariyla, programla hazirlanir.
+ZOR_TURLER = ("kareli", "cizgili", "masada", "kucuk")
+
+
+def zor_fotograf(tur, rakamlar, kaynak, rng):
+    W, H = 1600, 1200
+    kagit = np.array([rng.uniform(225, 250)] * 3, np.float32) - [0, rng.uniform(0, 8), rng.uniform(0, 15)]
+    img = np.ones((H, W, 3), np.float32) * kagit
+    kare = int(rng.uniform(28, 45))                                   # yaklasik 5 mm'lik kare
+    renk = np.array([rng.uniform(200, 235), rng.uniform(170, 210), rng.uniform(150, 200)], np.float32)   # acik mavi (BGR)
+    if tur in ("kareli", "cizgili"):
+        aci = np.radians(rng.uniform(-1.5, 1.5))                      # defter fotografta hafif egik durur
+        for y in range(int(rng.uniform(0, kare)) - H, 2 * H, kare if tur == "kareli" else int(kare * 1.6)):
+            cv2.line(img, (0, y), (W, int(y + W * np.tan(aci))), renk.tolist(), 1 + int(rng.random() < 0.3), cv2.LINE_AA)
+        if tur == "kareli":
+            for x in range(int(rng.uniform(0, kare)) - W, 2 * W, kare):
+                cv2.line(img, (x, 0), (int(x - H * np.tan(aci)), H), renk.tolist(), 1 + int(rng.random() < 0.3), cv2.LINE_AA)
+    h = int(kare * rng.uniform(1.3, 2.2)) if tur in ("kareli", "cizgili") else int(rng.uniform(45, 90))
+    if tur == "kucuk":
+        h = int(rng.uniform(28, 42))
+    murekkep = np.array([rng.uniform(20, 60), rng.uniform(15, 40), rng.uniform(10, 40)], np.float32)
+    yog = np.zeros((H, W), np.float32)
+    y0, x = int(H * rng.uniform(0.3, 0.45)), int(W * rng.uniform(0.2, 0.35))
+    for _, o in rakamlar:
+        p = _rakam_mnist(o, int(h * rng.uniform(0.9, 1.1)), rng) if kaynak == "mnist" else _rakam_vurus(o, int(h * rng.uniform(0.9, 1.1)), rng)
+        yy = y0 + int(rng.normal(0, 0.04 * h))
+        yog[yy:yy + p.shape[0], x:x + p.shape[1]] = np.maximum(yog[yy:yy + p.shape[0], x:x + p.shape[1]], p[:H - yy, :W - x])
+        x += p.shape[1] + int(rng.uniform(0.25, 0.6) * h)
+    img = img * (1 - yog[..., None]) + murekkep * yog[..., None]
+    if tur == "masada":                                               # kagit fotografin ortasinda, cevresi ahsap masa
+        yy, xx = np.mgrid[0:H, 0:W]
+        doku = np.sin(xx / rng.uniform(6, 14) + np.sin(yy / 40) * 3) * 12 + rng.normal(0, 6, (H, W))
+        masa = np.stack([60 + doku, 95 + doku, 140 + doku], -1)
+        x0, x1 = int(W * rng.uniform(0.05, 0.15)), int(W * rng.uniform(0.85, 0.95))
+        y0_, y1 = int(H * rng.uniform(0.05, 0.2)), int(H * rng.uniform(0.85, 0.98))
+        m = np.zeros((H, W), np.float32)
+        cv2.fillConvexPoly(m, np.array([[x0, y0_], [x1, y0_ + 10], [x1 - 15, y1], [x0 + 10, y1]], np.int32), 1.0)
+        m = cv2.GaussianBlur(m, (5, 5), 0)[..., None]
+        img = img * m + masa * (1 - m)
+    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+    img = img * (1 - rng.uniform(0.05, 0.2) * (xx / W) - rng.uniform(0, 0.15) * (yy / H))[..., None]
+    img = cv2.GaussianBlur(img, (0, 0), rng.uniform(0.6, 1.2)) + rng.normal(0, 4, img.shape)
+    ok, jpg = cv2.imencode(".jpg", img.clip(0, 255).astype(np.uint8), [cv2.IMWRITE_JPEG_QUALITY, 85])
+    return jpg.tobytes(), "".join(str(r) for r, _ in rakamlar)
+
+
+def zor_fotograflar(tur_basina, tohum=0):
+    """Her zor durumdan tur_basina fotograf (yarisi MNIST, yarisi toplanan veri). Donus: [(jpeg, metin, kaynak, tur)]"""
+    rng = np.random.default_rng(tohum)
+    q = np.load(os.path.join(VERI, "qmnist.npz"))
+    xm, ym = q["x_test10k"], q["y_test10k"]
+    tk = toplanan_kisiler(); adlar = sorted(tk)
+    sonuc = []
+    for tur in ZOR_TURLER:
+        for i in range(tur_basina):
+            kaynak = "mnist" if i % 2 == 0 else "toplanan"
+            kisi = tk[adlar[int(rng.integers(len(adlar)))]]
+            rakamlar = []
+            for _ in range(int(rng.integers(3, 7))):
+                r = int(rng.integers(10))
+                rakamlar.append((r, xm[rng.choice(np.flatnonzero(ym == r))]) if kaynak == "mnist"
+                                else (r, kisi[r][int(rng.integers(len(kisi[r])))]))
+            jpg, metin = zor_fotograf(tur, rakamlar, kaynak, rng)
+            sonuc.append((jpg, metin, kaynak, tur))
+    return sonuc

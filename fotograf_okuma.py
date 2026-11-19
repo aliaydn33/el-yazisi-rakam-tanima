@@ -8,6 +8,8 @@ secilmistir (kare pencereli kapama, kendi Otsu ve yuvarlama kodumuz gibi).
 
 Adimlar:
   1) Gri tonlama, en uzun kenari 1600 pikselden buyukse kucultme
+  1b) Fotografta kagidin disinda masa ya da baska seyler de gorunuyorsa kagit bulunur (parlak ve renksiz en buyuk
+     bolge), yalnizca kagidin ustu okunur.
   2) Aydinlatma farkinin giderilmesi: kagidin parlakligi buyuk bir kapama (en buyuk, sonra en kucuk deger
      suzgeci) ile kestirilir (murekkep silinir, kagit kalir) ve goruntu buna bolunur. Boylece golgeli ya da bir
      tarafi karanlik fotograflar da ayni esikle ayrilabilir. Ardindan 3x3 Gauss yumusatmasi.
@@ -35,6 +37,8 @@ from ortak import mnist_formatina_getir
 EN_BUYUK_KENAR = 1600
 HEDEF_KALINLIK = 0.13       # ortak.vuruslari_ciz: 200 piksellik cizimde 26 piksel kalinlik
 FLT_EPSILON = 1.1920928955078125e-07
+KOYU_ORAN = 0.0005          # en koyu %0,05: murekkebin kendisi (rakamlar fotografin cok kucuk bir kismi olabilir)
+ZAYIF_ORAN = 0.3            # cift esikte soluk kisimlarin ne kadar acik olabilecegi (defter cizgileri alinmasin)
 
 
 def yarim_yukari(x):
@@ -49,10 +53,11 @@ def disk(k):
     return (((x - r) ** 2 + (y - r) ** 2) <= r * r).astype(np.uint8)
 
 
-def otsu(duz):
-    """OpenCV'deki Otsu yonteminin aynisi (sinif ici varyansi en kucuk yapan esik)."""
-    hist = np.bincount(duz.astype(np.int64).ravel(), minlength=256)[:256].astype(np.float64)
-    olcek = 1.0 / duz.size
+def otsu(duz, secim=None):
+    """OpenCV'deki Otsu yonteminin aynisi (sinif ici varyansi en kucuk yapan esik). secim: yalnizca bu pikseller."""
+    v = duz if secim is None else duz[secim]
+    hist = np.bincount(v.astype(np.int64).ravel(), minlength=256)[:256].astype(np.float64)
+    olcek = 1.0 / v.size
     mu = float((np.arange(256) * hist).sum()) * olcek
     q1 = mu1 = en = 0.0
     esik = 0
@@ -71,15 +76,43 @@ def otsu(duz):
     return esik
 
 
-def yuzdelik(duz, oran):
-    """Degerlerin 'oran' kadarinin altinda kaldigi en kucuk deger (siralamaya gore)."""
-    hist = np.bincount(duz.astype(np.int64).ravel(), minlength=256)
-    hedef = int(np.ceil(oran * duz.size))
+def yuzdelik(duz, oran, secim=None):
+    """Degerlerin 'oran' kadarinin altinda kaldigi en kucuk deger (siralamaya gore). secim: yalnizca bu pikseller."""
+    v = duz if secim is None else duz[secim]
+    hist = np.bincount(v.astype(np.int64).ravel(), minlength=256)
+    hedef = int(np.ceil(oran * v.size))
     return int(np.searchsorted(np.cumsum(hist), hedef))
 
 
-def murekkep_maskesi(gri):
-    """Gri goruntuden murekkep maskesi (murekkep 1, kagit 0)."""
+def kagit_maskesi(rgb):
+    """Fotografta kagidin disinda masa ya da baska seyler de gorunuyorsa kagidin oldugu bolge, gorunmuyorsa None.
+    Kagit: parlak ve renksiz (doygunlugu dusuk) piksellerin olusturdugu en buyuk parca. Uzerindeki yazilar ve defter
+    cizgileri delik olarak kalir, delikler doldurulur. Kenardaki golge icin kagit biraz daraltilir."""
+    H, W = rgb.shape[:2]
+    c = rgb.astype(np.int32)
+    en_b, en_k = c.max(2), c.min(2)
+    p95 = yuzdelik(en_b, 0.95)
+    aday = ((en_b * 100 >= 55 * p95) & ((en_b - en_k) * 100 <= 25 * en_b)).astype(np.uint8)
+    k = max(5, min(H, W) // 100) | 1
+    aday = cv2.morphologyEx(aday, cv2.MORPH_CLOSE, np.ones((k, k), np.uint8))
+    n, et, ist, _ = cv2.connectedComponentsWithStats(aday, connectivity=8)
+    if n < 2:
+        return None
+    en = 1 + int(np.argmax(ist[1:, cv2.CC_STAT_AREA]))
+    if ist[en, cv2.CC_STAT_AREA] < 0.15 * H * W:
+        return None
+    kagit = et == en
+    _, et2 = cv2.connectedComponents((~kagit).astype(np.uint8), connectivity=4)
+    kenar = np.unique(np.concatenate([et2[0], et2[-1], et2[:, 0], et2[:, -1]]))
+    kagit |= (~kagit) & ~np.isin(et2, kenar[kenar > 0])          # delikler (kenara ulasmayan bosluklar)
+    if kagit.mean() >= 0.97:
+        return None
+    e = max(3, min(H, W) // 100) | 1
+    return cv2.erode(kagit.astype(np.uint8), np.ones((e, e), np.uint8)).astype(bool)
+
+
+def murekkep_maskesi(gri, kagit=None):
+    """Gri goruntuden murekkep maskesi (murekkep 1, kagit 0). kagit verilirse yalnizca kagidin ustu."""
     h, w = gri.shape
     k = max(15, int(min(h, w) / 12)) | 1            # kalin yazilmis rakamlardan da buyuk olmali
     zemin = cv2.morphologyEx(gri, cv2.MORPH_CLOSE, np.ones((k, k), np.uint8)).astype(np.float64)
@@ -87,11 +120,13 @@ def murekkep_maskesi(gri):
     p = np.pad(duz, 1, mode="reflect")              # 3x3 Gauss (1 2 1), kenarda yansitma
     yat = p[:, :-2] + 2 * p[:, 1:-1] + p[:, 2:]
     duz = np.floor((yat[:-2] + 2 * yat[1:-1] + yat[2:]) / 16 + 0.5)
-    # kagitta neredeyse hic murekkep yoksa Otsu kagit gurultusunu ayirmaya calisir; esik sinirlanir
-    esik = min(otsu(duz), 200)
+    # Esik: Otsu. Ancak defter cizgileri gibi acik renkli cizgiler de varsa Otsu kagidi cizgilerden ayirmaya calisir.
+    # Bu yuzden esik, en koyu piksellerle (murekkep) kagidin ortasindan daha acik olamaz. Kagitta neredeyse hic
+    # murekkep yoksa da Otsu kagit gurultusunu ayirmaya calisir; esik 200 ile sinirlanir.
+    esik = min(otsu(duz, kagit), (yuzdelik(duz, KOYU_ORAN, kagit) + yuzdelik(duz, 0.5, kagit)) / 2, 200)
     # cift esik: koyu murekkebe bagli olan soluk kisimlar da alinir (rakamin ince ya da soluk yerleri kopmasin)
     guclu = duz < esik
-    zayif = (duz < esik + 0.45 * (yuzdelik(duz, 0.9) - esik)).astype(np.uint8)
+    zayif = (duz < esik + ZAYIF_ORAN * (yuzdelik(duz, 0.9, kagit) - esik)).astype(np.uint8)
     _, etiket = cv2.connectedComponents(zayif, connectivity=8)
     tut = np.unique(etiket[guclu]); tut = tut[tut > 0]
     m = np.isin(etiket, tut)
@@ -100,6 +135,8 @@ def murekkep_maskesi(gri):
     a[:, 1:] &= m[:, :-1]; a[1:, :] &= m[:-1, :]; a[1:, 1:] &= m[:-1, :-1]
     b = a.copy()
     b[:, 1:] |= a[:, :-1]; b[1:, :] |= a[:-1, :]; b[1:, 1:] |= a[:-1, :-1]
+    if kagit is not None:
+        b &= kagit
     return b.astype(np.uint8)
 
 
@@ -198,9 +235,10 @@ def rakam_goruntusu(etiket, kutu):
     return mnist_formatina_getir(parca * 255)
 
 
-def gri_oku(gri):
-    """gri: (H, W) uint8 (en uzun kenar 1600'u gecmeyen). Donus: kutular, satirlar ve 28x28 goruntuler."""
-    maske = murekkep_maskesi(gri)
+def gri_oku(gri, rgb=None):
+    """gri: (H, W) uint8 (en uzun kenar 1600'u gecmeyen), rgb: ayni boyutta renkli goruntu (kagidi bulmak icin).
+    Donus: kutular, satirlar ve 28x28 goruntuler."""
+    maske = murekkep_maskesi(gri, kagit_maskesi(rgb) if rgb is not None else None)
     h = rakam_yuksekligi(maske)
     if h:
         k = max(3, yarim_yukari(0.08 * h)) | 1
@@ -225,22 +263,22 @@ class FotografOkuyucu:
 
     def oku(self, bayt):
         """bayt: fotograf dosyasinin icerigi (JPEG, PNG...). Donus: sozluk (JSON'a cevrilebilir)."""
-        goruntu = cv2.imdecode(np.frombuffer(bayt, np.uint8), cv2.IMREAD_GRAYSCALE)
-        if goruntu is None:
+        renkli = cv2.imdecode(np.frombuffer(bayt, np.uint8), cv2.IMREAD_COLOR)
+        if renkli is None:
             raise ValueError("Dosya bir fotoğraf olarak açılamadı.")
-        H0, W0 = goruntu.shape
+        H0, W0 = renkli.shape[:2]
         olcek = min(1.0, EN_BUYUK_KENAR / max(H0, W0))
         if olcek < 1:
-            goruntu = cv2.resize(goruntu, (round(W0 * olcek), round(H0 * olcek)), interpolation=cv2.INTER_AREA)
-        sonuc = self.gri_oku(goruntu)
+            renkli = cv2.resize(renkli, (round(W0 * olcek), round(H0 * olcek)), interpolation=cv2.INTER_AREA)
+        sonuc = self.gri_oku(cv2.cvtColor(renkli, cv2.COLOR_BGR2GRAY), renkli[..., ::-1])
         sonuc["genislik"], sonuc["yukseklik"] = W0, H0
         for s in sonuc["satirlar"]:
             for r in s["rakamlar"]:
                 r["kutu"] = [round(v / olcek) for v in r["kutu"]]
         return sonuc
 
-    def gri_oku(self, gri):
-        satirlar, x28 = gri_oku(gri)
+    def gri_oku(self, gri, rgb=None):
+        satirlar, x28 = gri_oku(gri, rgb)
         sonuc = {"genislik": gri.shape[1], "yukseklik": gri.shape[0], "satirlar": [], "metin": ""}
         if not x28:
             return sonuc
