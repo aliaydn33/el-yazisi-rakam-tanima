@@ -16,7 +16,7 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 | 4 | Model karşılaştırması (5 tohum, istatistiksel testler), EMNIST deneyleri, çizim ekranı | Tamamlandı |
 | 5 | Modelin tarayıcıya taşınması (ONNX), canlı tahmin, uygulamanın ilk sürümü, Drive'a kaydeden veri toplama | Tamamlandı |
 | 6 | "Rakam değil" uyarısı, Grad-CAM | Tamamlandı |
-| 7 | FastAPI sunucu, telefona kurulum (PWA), sayı ve işlem okuma, düzeltme kaydı, fotoğraftan okuma | Tamamlandı |
+| 7 | FastAPI sunucu, telefona kurulum (PWA), sayı ve işlem okuma, fotoğraftan okuma, düzeltme kaydı ve ince ayar | Tamamlandı |
 | 8 | Kullanıcı testi (SUS), istatistiksel karşılaştırma | Planlandı |
 | 9 | Final, demo | Planlandı |
 
@@ -43,8 +43,9 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 8_h2_olcumu.py            5. hafta: ekibin topladığı veride H2 ölçümü (güven aralığı, katılımcı bazında sonuçlar)
 9_rakam_degil.py          6. hafta: "rakam değil" uyarısı (EMNIST harfleri ve Quick, Draw! ile)
 10_gradcam.py             6. hafta: Grad-CAM ısı haritaları
-sunucu.py                 7. hafta: FastAPI sunucusu (fotoğraftan okuma, düzeltme kaydı, uygulamanın yayınlanması)
-fotograf_okuma.py         7. hafta: kâğıttaki rakamların fotoğraftan okunması (OpenCV)
+sunucu.py                 7. hafta: FastAPI sunucusu (düzeltmelerin toplanması, uygulamanın yayınlanması)
+fotograf_okuma.py         7. hafta: fotoğraftan okumanın Python karşılığı (uygulamadakiyle aynı yöntem)
+11_ince_ayar.py           7. hafta: kullanıcı düzeltmeleriyle modelin ince ayarı
 model_yapisi.py           Modeller (MLP, LeNet-5 benzeri CNN, Derin CNN), eğitim ve veri artırma
 ortak.py                  Ön işleme (MNIST biçimine getirme, vuruşları görüntüye çevirme)
 index.html                Uygulama: çizim, canlı tahmin, 10 rakamın olasılıkları, hız testi

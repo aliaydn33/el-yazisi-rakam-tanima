@@ -1,0 +1,43 @@
+{
+  "a) yalnızca düzeltilecek çizimler": {
+    "kosu": 10,
+    "duzeltme_sayisi_grup_basina": [
+      51,
+      65
+    ],
+    "ayrilan_kisiler_degisim": [
+      2.0,
+      0.66
+    ],
+    "ayrilan_kisiler_p": 0.0,
+    "dokunmatik_dogrulama_degisim": [
+      0.11,
+      0.16
+    ],
+    "mnist_test_degisim": [
+      -0.16,
+      0.09
+    ],
+    "ise_yarar": true
+  },
+  "b) bütün çizimler": {
+    "kosu": 10,
+    "duzeltme_sayisi_grup_basina": [
+      500
+    ],
+    "ayrilan_kisiler_degisim": [
+      1.5,
+      0.43
+    ],
+    "ayrilan_kisiler_p": 0.0,
+    "dokunmatik_dogrulama_degisim": [
+      0.21,
+      0.12
+    ],
+    "mnist_test_degisim": [
+      0.13,
+      0.03
+    ],
+    "ise_yarar": true
+  }
+}

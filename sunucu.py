@@ -1,14 +1,15 @@
 """
 HAFTA 7: Uygulamanin sunucu tarafi (FastAPI)
 
-Gereksinim analizine gore tahmin kullanicinin tarayicisinda yapilir (IG-16), sunucu yalnizca tarayicida
-yapilamayan isler icin kullanilir:
+Gereksinim analizine gore tahmin kullanicinin tarayicisinda yapilir (IG-16). Fotograftan okuma da telefonda
+yapilir (uygulamanin icindeki FotografOkuma). Sunucunun uygulama icin yaptigi is, kullanicilarin duzeltmelerini
+bir yerde toplamaktir:
   GET  /api/saglik           sunucunun calistigini ve yuklu modeli bildirir (uygulama sunucuyu bununla bulur)
   GET  /api/model            uygulamadaki modellerin bilgileri (onnx/bilgi.json)
-  POST /api/fotograf         kagida yazilmis rakamlarin fotografindan okuma (IG-11, fotograf_okuma.py)
   POST /api/geri-bildirim    kullanicinin duzelttigi tahminlerin kaydi (IG-09)
   GET  /api/geri-bildirim/ozet   kayit sayilari (rakam bazinda), cizimlerin kendisi verilmez
-  POST /api/tahmin           28x28 goruntulerin tahmini. Uygulama kullanmaz, testler ve baska istemciler icin.
+  POST /api/tahmin           28x28 goruntulerin tahmini       } uygulama kullanmaz; testler (tarayicidaki sonucla
+  POST /api/fotograf         fotograftan okuma (Python)       }  karsilastirma) ve baska istemciler icin
 
 Ayrica uygulamanin kendisini (index.html, manifest.webmanifest, sw.js, simgeler/) yayinlar. Proje klasorundeki
 diger dosyalar (veri, modeller, geri bildirim kayitlari) disariya acilmaz.

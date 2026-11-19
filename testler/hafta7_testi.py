@@ -5,7 +5,9 @@ Sunucu bu betik icinde ayri bir is parcaciginda baslatilir (geri bildirim kayitl
   1) Sunucu: /api/saglik, /api/model, /api/tahmin (2.000 dokunmatik test cizimi, Python'daki onnxruntime ile
      karsilastirma ve sure), /api/geri-bildirim (gecerli ve hatali kayitlar), proje dosyalarinin disariya kapali
      olmasi.
-  2) Fotograftan okuma (IG-11, E2): hazir_testler.py'nin urettigi fotograflar /api/fotograf'a gonderilir.
+  2) Fotograftan okuma (IG-11, E2): hazir_testler.py'nin urettigi fotograflar uygulamanin icinde (telefondaki gibi)
+     ve sunucuda (/api/fotograf) okunur, iki sonuc karsilastirilir. Islemci 4 kat yavaslatilarak telefon hizi
+     yaklasik olarak denenir. Internet yokken de arayuzden bir fotograf okunur.
   3) PWA (IOG-08, H4): service worker'in kurulmasi, tarayicinin kurulabilirlik denetimi (Chrome DevTools
      Protocol, Page.getInstallabilityErrors), internet kesildikten sonra sayfanin yeniden acilmasi ve tahmin
      yapilmasi.
@@ -236,23 +238,11 @@ def main():
                          "sunucu_ms": g["sure_ms"], "istek_ms": round(s, 1), "kb": round(len(jpg) / 1024, 1)})
         if i < 3:
             open(os.path.join(CIKTI, f"hafta7_ornek_fotograf_{i + 1}.jpg"), "wb").write(jpg)
-    f = pd.DataFrame(satirlar)
-    f.to_csv(os.path.join(CIKTI, "hafta7_fotograf_testi.csv"), index=False, encoding="utf-8-sig")
     fs = {}
-    for k, gr in [("tümü", f)] + list(f.groupby("kaynak")):
-        tam = gr[gr.rakam_sayisi_dogru]
-        fs[k] = {"fotograf": len(gr), "tam_dogru_%": round(gr.tam_dogru.mean() * 100, 1),
-                 "rakam_sayisi_dogru_%": round(gr.rakam_sayisi_dogru.mean() * 100, 1),
-                 "satir_sayisi_dogru_%": round(gr.satir_sayisi_dogru.mean() * 100, 1),
-                 "rakam_dogrulugu_%": round(tam.dogru_rakam.sum() / tam.rakam.sum() * 100, 2),
-                 "rakam_toplam": int(gr.rakam.sum())}
-    fs["sure"] = {"sunucu_ms": ozet(f.sunucu_ms), "istek_ms": ozet(f.istek_ms), "fotograf_kb": ozet(f.kb)}
     kod, _, _ = istek(adres + "/api/fotograf", *cok_parcali("fotograf", "x.txt", b"fotograf degil", "text/plain"))
     fs["fotograf_olmayan_dosya_kodu"] = kod
     kod, _, _ = istek(adres + "/api/fotograf", *cok_parcali("fotograf", "b.jpg", os.urandom(10 * 1024 * 1024 + 10)))
     fs["10_MB_ustu_kodu"] = kod
-    sonuc["fotograf"] = fs
-    print(json.dumps(fs, ensure_ascii=False, indent=1))
 
     # ------------------------------------------------------------------ 5) sayi ve islem ornekleri
     dk, tk = ht.dokunmatik_kisiler(), ht.toplanan_kisiler()
@@ -289,6 +279,33 @@ def main():
         tz = np.array(s.evaluate(sira, [x[:500].reshape(500, -1).tolist(), "ort"]))
         t["tarayici_sunucu_ayni_%"] = round(float((tz.argmax(1) == sunucu_skor[:500].argmax(1)).mean()) * 100, 2)
 
+        # fotograftan okuma uygulamanin icinde (telefonda): (1) ayni gri goruntude Python ile ayni sonuc mu,
+        # (2) JPEG dosyasi tarayicida acilarak bastan sona okuma (telefondaki yol)
+        import base64
+        import cv2
+        from fotograf_okuma import FotografOkuyucu
+        bilgi = json.load(open(os.path.join("onnx", "bilgi.json"), encoding="utf-8"))
+        okuyucu = FotografOkuyucu(os.path.join("onnx", "secilen_int8.onnx"), bilgi["secilen_int8.onnx"].get("rakam_degil"))
+        adresler = ["data:image/jpeg;base64," + base64.b64encode(jpg).decode() for jpg, _, _ in fotolar]
+        for i, (jpg, metin, kaynak) in enumerate(fotolar):
+            g = cv2.imdecode(np.frombuffer(jpg, np.uint8), cv2.IMREAD_GRAYSCALE)
+            py = okuyucu.gri_oku(g)
+            js = s.evaluate("([g, W, H]) => Uygulama.fotografGri(g, W, H, 'ort')", [g.ravel().tolist(), g.shape[1], g.shape[0]])
+            u = s.evaluate("a => Uygulama.fotografOku(a, 'ort')", adresler[i])
+            kp = [r["kutu"] for x_ in py["satirlar"] for r in x_["rakamlar"]]
+            kj = [r["kutu"] for x_ in js["satirlar"] for r in x_["rakamlar"]]
+            okunan = u["metin"].replace(" ", ""); hedef = metin.replace("\n", ""); oku_ = okunan.replace("\n", "")
+            satirlar[i].update({"cihaz_okunan": okunan.replace("\n", "/"), "cihaz_tam_dogru": okunan == metin,
+                                "cihaz_rakam_sayisi_dogru": len(oku_) == len(hedef),
+                                "cihaz_satir_sayisi_dogru": okunan.count("\n") == metin.count("\n"),
+                                "cihaz_dogru_rakam": sum(p_ == q_ for p_, q_ in zip(oku_, hedef)) if len(oku_) == len(hedef) else None,
+                                "cihaz_ms": round(u["sure_ms"], 1), "python_ile_ayni_kutular": kp == kj,
+                                "python_ile_ayni_metin": py["metin"] == js["metin"]})
+        # telefon benzetimi: islemci 4 kat yavaslatilarak ilk 20 fotograf
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+        yavas = [s.evaluate("a => Uygulama.fotografOku(a, 'ort')", a_)["sure_ms"] for a_ in adresler[:20]]
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+
         def ciz(vuruslar):
             k = s.locator("#tuval").bounding_box()
             p_ = np.array([q for v in vuruslar for q in v]); x0, y0 = p_.min(0); w = max(np.ptp(p_[:, 0]), np.ptp(p_[:, 1]), 1e-6)
@@ -324,10 +341,14 @@ def main():
         s.reload(); motor2 = s.evaluate("Uygulama.hazir")
         s.wait_for_function("document.getElementById('sunucuDurum').textContent.indexOf('Yok') === 0", timeout=10000)
         ciz(ornek_cizim)
+        tahmin2, guven2 = s.text_content("#rakam"), s.text_content("#guven")
+        s.set_input_files("#fotoSec", os.path.join(CIKTI, "hafta7_ornek_fotograf_2.jpg"))
+        s.wait_for_function("document.getElementById('fotoMetin').textContent.length > 0", timeout=30000)
         t["internetsiz"] = {"sayfa_acildi": s.evaluate("!!window.Uygulama"), "motor": motor2, "ort_durumu": s.evaluate("Uygulama.ortDurum()"),
-                            "tahmin": s.text_content("#rakam"), "guven": s.text_content("#guven"),
-                            "internet_yok_etiketi": etiket,
-                            "sunucu": s.text_content("#sunucuDurum"), "fotograf_bolumu_gizli": s.is_hidden("#fotoKart")}
+                            "tahmin": tahmin2, "guven": guven2, "internet_yok_etiketi": etiket,
+                            "sunucu": s.text_content("#sunucuDurum"),
+                            "fotograf_beklenen": fotolar[1][1].replace("\n", "/"),
+                            "fotograf_okunan": s.text_content("#fotoMetin").replace("\n", "/")}
         s.click("#duzeltAc"); s.click("#duzeltRakamlar button[data-rakam='3']")
         s.wait_for_function("document.getElementById('duzeltDurum').textContent.indexOf('cihazda') >= 0", timeout=10000)
         t["duzeltme_cihazda"] = {"mesaj": s.text_content("#duzeltDurum"), "cihazdaki_kayit": s.text_content("#yerelSayi")}
@@ -351,6 +372,24 @@ def main():
         b.close()
     sonuc["tarayici"] = t
     print(json.dumps(t, ensure_ascii=False, indent=1))
+
+    f = pd.DataFrame(satirlar)
+    f.to_csv(os.path.join(CIKTI, "hafta7_fotograf_testi.csv"), index=False, encoding="utf-8-sig")
+    for on_ek, ad in (("", "sunucu"), ("cihaz_", "uygulama")):
+        fs[ad] = {}
+        for k, gr in [("tümü", f)] + list(f.groupby("kaynak")):
+            tam = gr[gr[on_ek + "rakam_sayisi_dogru"]]
+            fs[ad][k] = {"fotograf": len(gr), "tam_dogru_%": round(gr[on_ek + "tam_dogru"].mean() * 100, 1),
+                         "rakam_sayisi_dogru_%": round(gr[on_ek + "rakam_sayisi_dogru"].mean() * 100, 1),
+                         "satir_sayisi_dogru_%": round(gr[on_ek + "satir_sayisi_dogru"].mean() * 100, 1),
+                         "rakam_dogrulugu_%": round(tam[on_ek + "dogru_rakam"].sum() / tam.rakam.sum() * 100, 2),
+                         "rakam_toplam": int(gr.rakam.sum())}
+    fs["uygulama_python_ayni_kutular_%"] = round(f.python_ile_ayni_kutular.mean() * 100, 1)
+    fs["uygulama_python_ayni_metin_%"] = round(f.python_ile_ayni_metin.mean() * 100, 1)
+    fs["sure"] = {"sunucu_ms": ozet(f.sunucu_ms), "istek_ms": ozet(f.istek_ms), "uygulama_ms": ozet(f.cihaz_ms),
+                  "uygulama_4kat_yavas_ms": ozet(yavas), "fotograf_kb": ozet(f.kb)}
+    sonuc["fotograf"] = fs
+    print(json.dumps(fs, ensure_ascii=False, indent=1))
 
     sat = []
     for o_, x_, xd in zip(ogeler, r, r_derin):

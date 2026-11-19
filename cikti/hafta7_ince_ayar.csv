@@ -1,0 +1,21 @@
+﻿durum,grup,tohum,duzeltme_sayisi,ayrilan_kisiler_once_%,ayrilan_kisiler_sonra_%,dokunmatik_dogrulama_once_%,dokunmatik_dogrulama_sonra_%,mnist_test_once_%,mnist_test_sonra_%
+a) yalnızca düzeltilecek çizimler,1,42,51,95.0,98.0,98.07,98.09,99.0,98.74
+a) yalnızca düzeltilecek çizimler,1,43,51,95.0,97.4,98.07,97.99,99.0,98.71
+a) yalnızca düzeltilecek çizimler,1,44,51,95.0,97.4,98.07,97.99,99.0,98.86
+a) yalnızca düzeltilecek çizimler,1,45,51,95.0,97.4,98.07,98.04,99.0,98.79
+a) yalnızca düzeltilecek çizimler,1,46,51,95.0,97.8,98.07,98.04,99.0,98.77
+b) bütün çizimler,1,42,500,95.0,96.8,98.07,98.39,99.0,99.17
+b) bütün çizimler,1,43,500,95.0,97.0,98.07,98.32,99.0,99.13
+b) bütün çizimler,1,44,500,95.0,96.6,98.07,98.39,99.0,99.13
+b) bütün çizimler,1,45,500,95.0,96.2,98.07,98.42,99.0,99.07
+b) bütün çizimler,1,46,500,95.0,97.4,98.07,98.37,99.0,99.1
+a) yalnızca düzeltilecek çizimler,2,42,65,97.0,98.4,98.07,98.32,99.0,98.85
+a) yalnızca düzeltilecek çizimler,2,43,65,97.0,98.4,98.07,98.27,99.0,98.9
+a) yalnızca düzeltilecek çizimler,2,44,65,97.0,98.4,98.07,98.34,99.0,98.94
+a) yalnızca düzeltilecek çizimler,2,45,65,97.0,98.4,98.07,98.32,99.0,98.97
+a) yalnızca düzeltilecek çizimler,2,46,65,97.0,98.4,98.07,98.37,99.0,98.92
+b) bütün çizimler,2,42,500,97.0,98.2,98.07,98.32,99.0,99.14
+b) bütün çizimler,2,43,500,97.0,98.2,98.07,98.19,99.0,99.15
+b) bütün çizimler,2,44,500,97.0,98.2,98.07,98.09,99.0,99.11
+b) bütün çizimler,2,45,500,97.0,98.2,98.07,98.17,99.0,99.16
+b) bütün çizimler,2,46,500,97.0,98.2,98.07,98.12,99.0,99.12

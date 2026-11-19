@@ -16,13 +16,13 @@
       "dogruluk_%": 97.3,
       "tek_cizim_istek_ms": {
         "ortalama": 1.1,
-        "medyan": 0.99,
-        "en_yavas_%5": 1.74
+        "medyan": 1.03,
+        "en_yavas_%5": 1.39
       },
       "tek_cizim_model_ms": {
-        "ortalama": 0.19,
-        "medyan": 0.17,
-        "en_yavas_%5": 0.25
+        "ortalama": 0.21,
+        "medyan": 0.19,
+        "en_yavas_%5": 0.28
       }
     },
     "tahmin_hatali_istek": {
@@ -52,53 +52,8 @@
       "/toplanan_veri/BENIOKU.txt": 404
     }
   },
-  "fotograf": {
-    "tümü": {
-      "fotograf": 200,
-      "tam_dogru_%": 90.0,
-      "rakam_sayisi_dogru_%": 100.0,
-      "satir_sayisi_dogru_%": 100.0,
-      "rakam_dogrulugu_%": 97.97,
-      "rakam_toplam": 1183
-    },
-    "mnist": {
-      "fotograf": 100,
-      "tam_dogru_%": 90.0,
-      "rakam_sayisi_dogru_%": 100.0,
-      "satir_sayisi_dogru_%": 100.0,
-      "rakam_dogrulugu_%": 98.14,
-      "rakam_toplam": 591
-    },
-    "toplanan": {
-      "fotograf": 100,
-      "tam_dogru_%": 90.0,
-      "rakam_sayisi_dogru_%": 100.0,
-      "satir_sayisi_dogru_%": 100.0,
-      "rakam_dogrulugu_%": 97.8,
-      "rakam_toplam": 592
-    },
-    "sure": {
-      "sunucu_ms": {
-        "ortalama": 108.06,
-        "medyan": 97.95,
-        "en_yavas_%5": 194.39
-      },
-      "istek_ms": {
-        "ortalama": 111.68,
-        "medyan": 101.45,
-        "en_yavas_%5": 197.29
-      },
-      "fotograf_kb": {
-        "ortalama": 82.03,
-        "medyan": 71.5,
-        "en_yavas_%5": 179.99
-      }
-    },
-    "fotograf_olmayan_dosya_kodu": 400,
-    "10_MB_ustu_kodu": 413
-  },
   "tarayici": {
-    "ilk_acilis_sn": 2.74,
+    "ilk_acilis_sn": 1.76,
     "pwa": {
       "motor": "ort",
       "onbellek": {
@@ -121,7 +76,7 @@
     "fotograf_arayuz": {
       "beklenen": "3068/9162",
       "okunan": "3068/9162",
-      "durum": "8 rakam okundu, 1 tanesinden emin değil (turuncu) · 243,4 ms"
+      "durum": "8 rakam okundu, 1 tanesinden emin değil (turuncu) · 244,1 ms"
     },
     "internetsiz": {
       "sayfa_acildi": true,
@@ -131,7 +86,8 @@
       "guven": "Güven: %100,0",
       "internet_yok_etiketi": true,
       "sunucu": "Yok (düzeltmeler cihazda saklanır)",
-      "fotograf_bolumu_gizli": true
+      "fotograf_beklenen": "043567",
+      "fotograf_okunan": "043567"
     },
     "duzeltme_cihazda": {
       "mesaj": "Düzeltme (3) bu cihazda kaydedildi.",
@@ -140,6 +96,91 @@
       "indirilen_dogru": 3
     },
     "sayfa_hatalari": []
+  },
+  "fotograf": {
+    "fotograf_olmayan_dosya_kodu": 400,
+    "10_MB_ustu_kodu": 413,
+    "sunucu": {
+      "tümü": {
+        "fotograf": 200,
+        "tam_dogru_%": 90.0,
+        "rakam_sayisi_dogru_%": 100.0,
+        "satir_sayisi_dogru_%": 100.0,
+        "rakam_dogrulugu_%": 97.97,
+        "rakam_toplam": 1183
+      },
+      "mnist": {
+        "fotograf": 100,
+        "tam_dogru_%": 91.0,
+        "rakam_sayisi_dogru_%": 100.0,
+        "satir_sayisi_dogru_%": 100.0,
+        "rakam_dogrulugu_%": 98.31,
+        "rakam_toplam": 591
+      },
+      "toplanan": {
+        "fotograf": 100,
+        "tam_dogru_%": 89.0,
+        "rakam_sayisi_dogru_%": 100.0,
+        "satir_sayisi_dogru_%": 100.0,
+        "rakam_dogrulugu_%": 97.64,
+        "rakam_toplam": 592
+      }
+    },
+    "uygulama": {
+      "tümü": {
+        "fotograf": 200,
+        "tam_dogru_%": 90.0,
+        "rakam_sayisi_dogru_%": 100.0,
+        "satir_sayisi_dogru_%": 100.0,
+        "rakam_dogrulugu_%": 97.97,
+        "rakam_toplam": 1183
+      },
+      "mnist": {
+        "fotograf": 100,
+        "tam_dogru_%": 91.0,
+        "rakam_sayisi_dogru_%": 100.0,
+        "satir_sayisi_dogru_%": 100.0,
+        "rakam_dogrulugu_%": 98.31,
+        "rakam_toplam": 591
+      },
+      "toplanan": {
+        "fotograf": 100,
+        "tam_dogru_%": 89.0,
+        "rakam_sayisi_dogru_%": 100.0,
+        "satir_sayisi_dogru_%": 100.0,
+        "rakam_dogrulugu_%": 97.64,
+        "rakam_toplam": 592
+      }
+    },
+    "uygulama_python_ayni_kutular_%": 100.0,
+    "uygulama_python_ayni_metin_%": 100.0,
+    "sure": {
+      "sunucu_ms": {
+        "ortalama": 55.78,
+        "medyan": 53.95,
+        "en_yavas_%5": 85.0
+      },
+      "istek_ms": {
+        "ortalama": 59.15,
+        "medyan": 57.1,
+        "en_yavas_%5": 89.29
+      },
+      "uygulama_ms": {
+        "ortalama": 151.93,
+        "medyan": 147.6,
+        "en_yavas_%5": 215.2
+      },
+      "uygulama_4kat_yavas_ms": {
+        "ortalama": 647.05,
+        "medyan": 634.7,
+        "en_yavas_%5": 877.93
+      },
+      "fotograf_kb": {
+        "ortalama": 82.03,
+        "medyan": 71.5,
+        "en_yavas_%5": 179.99
+      }
+    }
   },
   "sayi_islem": {
     "tümü": {
