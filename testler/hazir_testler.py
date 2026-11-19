@@ -9,7 +9,7 @@ kisilerin tek tek cizdigi rakamlardan olusturulur:
     veriden (20 katilimci) bir kisi secilir, sayinin her rakami icin o kisinin o rakamdan cizdigi orneklerden biri
     alinir. Rakamlar ayni yukseklige getirilip soldan saga, aralarinda rakam yuksekliginin %15-50'si kadar bosluk
     birakilarak dizilir. Isaretler (+, -, x) icin gercek cizim olmadigindan bunlar programla, rastgele egim, boy,
-    kayma ve titreme eklenerek cizilir.
+    kayma, titreme, basiklik ve bastaki kucuk kanca eklenerek cizilir.
   Fotograflar: Gercek kagit taramasi olan MNIST test kumesinden (eğitimde kullanilmadi) ve toplanan verinin
     vuruslarindan secilen rakamlar kagit rengindeki bir zemine murekkep rengiyle yazilir. Ardindan fotografa
     benzemesi icin isik farki, golge, hafif donme ve perspektif, bulaniklik, gurultu ve JPEG sikistirmasi eklenir.
@@ -77,7 +77,11 @@ def _cizgi(x0, y0, x1, y1, rng, n=14, titreme=0.012, egrilik=0.05):
     bukum = rng.uniform(-egrilik, egrilik) * L * 4 * t * (1 - t)
     x = x + nx * bukum + rng.normal(0, titreme * L, n)
     y = y + ny * bukum + rng.normal(0, titreme * L, n)
-    return [[float(a), float(b)] for a, b in zip(x, y)]
+    p = [[float(a), float(b)] for a, b in zip(x, y)]
+    if rng.random() < 0.3:                       # kalemin basta yaptigi kucuk kanca
+        k = rng.uniform(0.04, 0.08) * L * (1 if rng.random() < 0.5 else -1)
+        p = [[p[0][0] + nx * k, p[0][1] + ny * k]] + p
+    return p
 
 
 def isaret_ciz(tur, boy, rng):
@@ -98,8 +102,9 @@ def isaret_ciz(tur, boy, rng):
         return [yatay, dikey] if rng.random() < 0.5 else [dikey, yatay]
     if tur == CARPI:
         a1, a2 = np.radians(45 + rng.normal(0, 7)), np.radians(135 + rng.normal(0, 7))
-        d1 = _cizgi(-r * np.cos(a1), -r * np.sin(a1), r * np.cos(a1), r * np.sin(a1), rng)
-        d2 = _cizgi(-r * np.cos(a2), -r * np.sin(a2), r * np.cos(a2), r * np.sin(a2), rng)
+        bas = rng.uniform(0.6, 1.0)              # bazi kisiler carpiyi yatik (basik) yazar
+        d1 = _cizgi(-r * np.cos(a1), -r * np.sin(a1) * bas, r * np.cos(a1), r * np.sin(a1) * bas, rng)
+        d2 = _cizgi(-r * np.cos(a2), -r * np.sin(a2) * bas, r * np.cos(a2), r * np.sin(a2) * bas, rng)
         return [d1, d2] if rng.random() < 0.5 else [d2, d1]
     raise ValueError(tur)
 

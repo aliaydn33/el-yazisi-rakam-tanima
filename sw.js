@@ -1,6 +1,6 @@
 // Rakam Tanima - service worker (7_uygulama_olustur.py uretir, elle degistirilmez)
 // Uygulamanin internetsiz acilabilmesi icin sayfa, simgeler ve onnxruntime-web dosyalari onbellege alinir.
-var SURUM = "f109cee24c98";
+var SURUM = "254cdb94c175";
 var SAYFA = "rakam-sayfa-" + SURUM;              // sayfa her degistiginde yeni onbellek
 var ORT = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
 var ORT_ONBELLEK = "rakam-ort-1.20.1";           // onnxruntime-web surumu degismedikce yeniden indirilmez

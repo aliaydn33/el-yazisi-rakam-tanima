@@ -15,14 +15,14 @@
       "skor_en_buyuk_fark": 4.999694822593881e-07,
       "dogruluk_%": 97.3,
       "tek_cizim_istek_ms": {
-        "ortalama": 0.96,
-        "medyan": 0.93,
-        "en_yavas_%5": 1.11
+        "ortalama": 1.1,
+        "medyan": 0.99,
+        "en_yavas_%5": 1.74
       },
       "tek_cizim_model_ms": {
-        "ortalama": 0.17,
+        "ortalama": 0.19,
         "medyan": 0.17,
-        "en_yavas_%5": 0.2
+        "en_yavas_%5": 0.25
       }
     },
     "tahmin_hatali_istek": {
@@ -79,14 +79,14 @@
     },
     "sure": {
       "sunucu_ms": {
-        "ortalama": 105.22,
-        "medyan": 95.1,
-        "en_yavas_%5": 193.71
+        "ortalama": 108.06,
+        "medyan": 97.95,
+        "en_yavas_%5": 194.39
       },
       "istek_ms": {
-        "ortalama": 108.54,
-        "medyan": 98.0,
-        "en_yavas_%5": 197.48
+        "ortalama": 111.68,
+        "medyan": 101.45,
+        "en_yavas_%5": 197.29
       },
       "fotograf_kb": {
         "ortalama": 82.03,
@@ -98,7 +98,7 @@
     "10_MB_ustu_kodu": 413
   },
   "tarayici": {
-    "ilk_acilis_sn": 1.85,
+    "ilk_acilis_sn": 2.74,
     "pwa": {
       "motor": "ort",
       "onbellek": {
@@ -121,7 +121,7 @@
     "fotograf_arayuz": {
       "beklenen": "3068/9162",
       "okunan": "3068/9162",
-      "durum": "8 rakam okundu, 1 tanesinden emin değil (turuncu) · 268,5 ms"
+      "durum": "8 rakam okundu, 1 tanesinden emin değil (turuncu) · 243,4 ms"
     },
     "internetsiz": {
       "sayfa_acildi": true,
@@ -130,7 +130,7 @@
       "tahmin": "3",
       "guven": "Güven: %100,0",
       "internet_yok_etiketi": true,
-      "sunucu": "Yok (düzeltmeler bu cihazda saklanır)",
+      "sunucu": "Yok (düzeltmeler cihazda saklanır)",
       "fotograf_bolumu_gizli": true
     },
     "duzeltme_cihazda": {
@@ -144,60 +144,60 @@
   "sayi_islem": {
     "tümü": {
       "örnek": 630,
-      "tam_dogru_%": 87.3,
-      "sayılar_%": 86.4,
-      "işlemler_%": 89.0,
-      "sembol_sayisi_dogru_%": 99.2,
+      "tam_dogru_%": 89.5,
+      "sayılar_%": 90.2,
+      "işlemler_%": 88.1,
+      "sembol_sayisi_dogru_%": 99.0,
       "isaretler_dogru_%": 100.0,
-      "islem_sonucu_dogru_%": 89.5,
+      "islem_sonucu_dogru_%": 88.6,
       "derin_cnn_tam_dogru_%": 89.0
     },
     "dokunmatik": {
       "örnek": 450,
-      "tam_dogru_%": 90.0,
+      "tam_dogru_%": 90.2,
       "sayılar_%": 90.0,
-      "işlemler_%": 90.0,
+      "işlemler_%": 90.7,
       "sembol_sayisi_dogru_%": 99.1,
       "isaretler_dogru_%": 100.0,
-      "islem_sonucu_dogru_%": 90.7,
-      "derin_cnn_tam_dogru_%": 88.2
+      "islem_sonucu_dogru_%": 91.3,
+      "derin_cnn_tam_dogru_%": 89.3
     },
     "toplanan": {
       "örnek": 180,
-      "tam_dogru_%": 80.6,
-      "sayılar_%": 77.5,
-      "işlemler_%": 86.7,
-      "sembol_sayisi_dogru_%": 99.4,
+      "tam_dogru_%": 87.8,
+      "sayılar_%": 90.8,
+      "işlemler_%": 81.7,
+      "sembol_sayisi_dogru_%": 98.9,
       "isaretler_dogru_%": 100.0,
-      "islem_sonucu_dogru_%": 86.7,
-      "derin_cnn_tam_dogru_%": 91.1
+      "islem_sonucu_dogru_%": 81.7,
+      "derin_cnn_tam_dogru_%": 88.3
     },
     "basamak_sayisina_gore_%": {
       "1": 97.1,
-      "2": 90.0,
-      "3": 92.9,
-      "4": 80.0,
-      "5": 81.4,
-      "6": 77.1
+      "2": 91.4,
+      "3": 94.3,
+      "4": 88.6,
+      "5": 87.1,
+      "6": 82.9
     },
     "basamak_sayisina_gore_derin_%": {
       "1": 98.6,
-      "2": 92.9,
+      "2": 90.0,
       "3": 95.7,
-      "4": 82.9,
-      "5": 90.0,
-      "6": 77.1
+      "4": 84.3,
+      "5": 87.1,
+      "6": 82.9
     },
     "mcnemar_lenet_derin": {
-      "yalniz_lenet_dogru": 22,
-      "yalniz_derin_dogru": 33,
-      "p": 0.177
+      "yalniz_lenet_dogru": 21,
+      "yalniz_derin_dogru": 18,
+      "p": 0.7493
     },
     "tek_rakamlar": {
       "dokunmatik": {
         "rakam": 16087,
-        "bolunen_%": 0.16,
-        "isaret_sanilan_%": 0.02
+        "bolunen_%": 0.14,
+        "isaret_sanilan_%": 0.03
       },
       "toplanan": {
         "rakam": 1000,

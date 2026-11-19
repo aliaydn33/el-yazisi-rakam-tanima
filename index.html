@@ -745,7 +745,7 @@ var YedekHesaplayici = (function () {
      2) Isaretler cizgilerin geometrisinden taninir:
           -  tek, duz, yataya yakin cizgi
           +  iki duz cizgi, biri yatay biri dikey, ortalarina yakin yerde kesisiyor
-          x  iki duz capraz cizgi, ortalarina yakin yerde kesisiyor
+          x  iki duz capraz cizgi, ortalarina yakin yerde kesisiyor (yatik yazilmis carpi da olur)
           =  iki duz yatay cizgi, ust uste ve kesismiyor (yalnizca sonda kullanilir)
         Geri kalan her sembol rakam modeline verilir.
      3) Ardisik rakamlar sayi olur (en fazla 6 basamak), carpma toplama ve cikarmadan once yapilir.
@@ -827,11 +827,25 @@ var SayiOkuma = (function () {
     }
     return g.map(function (s) { return { vuruslar: s.v.map(function (i) { return vuruslar[i]; }), kutu: s.k }; });
   }
+  function yolUzunlugu(v) { var L = 0; for (var i = 1; i < v.length; i++) L += Math.hypot(v[i][0] - v[i - 1][0], v[i][1] - v[i - 1][1]); return L; }
+  function uclariKirp(v, oran) {               // kalemin basta ve sonda yaptigi kucuk kanca ve kaymalar atilir
+    var L = yolUzunlugu(v), bas = L * oran, son = L * (1 - oran), s = 0, sonuc = [];
+    if (L === 0) return v;
+    for (var i = 1; i < v.length; i++) {
+      var p = v[i - 1], q = v[i], d = Math.hypot(q[0] - p[0], q[1] - p[1]), s2 = s + d;
+      var ara = function (h) { var t = d ? (h - s) / d : 0; return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; };
+      if (s <= bas && bas <= s2) sonuc.push(ara(bas));
+      if (s2 > bas && s2 < son) sonuc.push(q);
+      if (s <= son && son <= s2) { sonuc.push(ara(son)); break; }
+      s = s2;
+    }
+    return sonuc.length >= 2 ? sonuc : v;
+  }
   function cizgi(v) {                           // vurus duz bir cizgi mi? aci: 0 yatay, 90 dikey
     if (v.length < 2) return null;
-    var a = v[0], b = v[v.length - 1], dx = b[0] - a[0], dy = b[1] - a[1], kiris = Math.hypot(dx, dy), yol = 0, sapma = 0;
+    v = uclariKirp(v, 0.12);
+    var a = v[0], b = v[v.length - 1], dx = b[0] - a[0], dy = b[1] - a[1], kiris = Math.hypot(dx, dy), yol = yolUzunlugu(v), sapma = 0;
     if (kiris < 1) return null;
-    for (var i = 1; i < v.length; i++) yol += Math.hypot(v[i][0] - v[i - 1][0], v[i][1] - v[i - 1][1]);
     v.forEach(function (p) { sapma = Math.max(sapma, Math.abs((p[0] - a[0]) * dy - (p[1] - a[1]) * dx) / kiris); });
     var aci = Math.atan2(dy, dx) * 180 / Math.PI; if (aci < 0) aci += 180; if (aci >= 180) aci -= 180;
     return { duz: kiris / yol > 0.85 && sapma / kiris < 0.15, aci: aci, a: a, b: b, uzunluk: kiris };
@@ -843,19 +857,24 @@ var SayiOkuma = (function () {
     return { t: (q[0] * s[1] - q[1] * s[0]) / d, u: (q[0] * r[1] - q[1] * r[0]) / d };
   }
   function yatay(a, tol) { return a <= tol || a >= 180 - tol; }
+  function eksenUzakligi(a) { return Math.min(a % 90, 90 - a % 90); }   // 0: yatay ya da dikey, 45: capraz
   function isaret(sembol) {
-    var v = sembol.vuruslar, c = v.map(cizgi);
-    if (c.some(function (x) { return !x || !x.duz; })) return null;
+    // cok kisa vuruslar (kalemin yanlislikla degmesi, nokta) isaret karari verilirken dikkate alinmaz
+    var uz = sembol.vuruslar.map(yolUzunlugu), enUzun = Math.max.apply(null, uz);
+    var v = sembol.vuruslar.filter(function (x, i) { return uz[i] >= 0.25 * enUzun; }), c = v.map(cizgi);
+    if (!v.length || c.some(function (x) { return !x || !x.duz; })) return null;
     if (v.length === 1) return yatay(c[0].aci, 25) ? EKSI : null;
     if (v.length !== 2) return null;
     var k = kesisim(c[0], c[1]);
-    var ortada = k && k.t > 0.2 && k.t < 0.8 && k.u > 0.2 && k.u < 0.8;
-    var dikey = function (a) { return Math.abs(a - 90) <= 25; };
-    if (ortada) {
-      if ((yatay(c[0].aci, 25) && dikey(c[1].aci)) || (dikey(c[0].aci) && yatay(c[1].aci, 25))) return "+";
-      var d1 = Math.abs(c[0].aci - 45) <= 25 && Math.abs(c[1].aci - 135) <= 25, d2 = Math.abs(c[0].aci - 135) <= 25 && Math.abs(c[1].aci - 45) <= 25;
-      if (d1 || d2) return CARPI;
-    } else if (yatay(c[0].aci, 20) && yatay(c[1].aci, 20) && (!k || k.t < -0.1 || k.t > 1.1 || k.u < -0.1 || k.u > 1.1)) {
+    var ortada = k && k.t > 0.15 && k.t < 0.85 && k.u > 0.15 && k.u < 0.85;
+    var aradaki = Math.abs(c[0].aci - c[1].aci); aradaki = Math.min(aradaki, 180 - aradaki);
+    var boyOrani = Math.min(c[0].uzunluk, c[1].uzunluk) / Math.max(c[0].uzunluk, c[1].uzunluk);
+    if (ortada && aradaki >= 35 && boyOrani >= 0.55) {
+      // iki cizgi de yatay/dikey eksenlere yakinsa arti, eksenlerden uzaksa (capraz) carpi. Iki cizginin boyu da
+      // birbirine yakin olmali: ortasindan cizgi cekilmis 7'de yatay cizgi kisa kalir.
+      return (eksenUzakligi(c[0].aci) + eksenUzakligi(c[1].aci)) / 2 < 22.5 ? "+" : CARPI;
+    }
+    if (!ortada && yatay(c[0].aci, 20) && yatay(c[1].aci, 20) && (!k || k.t < -0.1 || k.t > 1.1 || k.u < -0.1 || k.u > 1.1)) {
       var ara = Math.abs((c[0].a[1] + c[0].b[1]) - (c[1].a[1] + c[1].b[1])) / 2;
       if (ara > 0.15 * Math.min(c[0].uzunluk, c[1].uzunluk)) return "=";
     }
