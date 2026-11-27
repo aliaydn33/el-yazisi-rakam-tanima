@@ -1,0 +1,15 @@
+{
+  "egitimde_kullanilan_cizim": 116,
+  "kisi": 20,
+  "tohum": 42,
+  "dokunmatik_dogrulama_%": {
+    "once": 98.07,
+    "sonra": 98.17
+  },
+  "mnist_test_%": {
+    "once": 99.0,
+    "sonra": 98.73
+  },
+  "dosya_KB": 76.9,
+  "sha256_int8": "70d29f5e397511b1493d2939f91754ab4c89cdc2b5932e4dd14549a06633c9ae"
+}

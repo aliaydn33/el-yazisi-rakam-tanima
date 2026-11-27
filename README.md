@@ -6,7 +6,7 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 
 **Uygulama:** https://aliaydn33.github.io/el-yazisi-rakam-tanima/ (çizdiğiniz rakamı tarayıcıda tanır, sunucuya bir şey gönderilmez)
 
-## Durum (7. hafta sonu)
+## Durum (8. hafta)
 
 | Hafta | İş | Durum |
 |---|---|---|
@@ -17,7 +17,7 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 | 5 | Modelin tarayıcıya taşınması (ONNX), canlı tahmin, uygulamanın ilk sürümü, Drive'a kaydeden veri toplama | Tamamlandı |
 | 6 | "Rakam değil" uyarısı, Grad-CAM | Tamamlandı |
 | 7 | FastAPI sunucu, telefona kurulum (PWA), sayı ve işlem okuma, fotoğraftan okuma, düzeltme kaydı ve ince ayar | Tamamlandı |
-| 8 | Kullanıcı testi (SUS), istatistiksel karşılaştırma | Planlandı |
+| 8 | Kullanıcı testi (SUS), istatistiksel karşılaştırma | Sürüyor |
 | 9 | Final, demo | Planlandı |
 
 **Şu anki uygulama modeli:** LeNet-5 benzeri CNN (61.706 parametre, veri artırma yok, QMNIST ile eğitildi). Uygulamada 8 bit (int8) ONNX sürümü kullanılıyor: 77 KB, dokunmatik testte %97,47 (32 bit sürümde %97,48).
@@ -46,9 +46,11 @@ Ekrana parmakla, kalemle ya da fareyle çizilen rakamları tarayıcıda gerçek 
 sunucu.py                 7. hafta: FastAPI sunucusu (düzeltmelerin toplanması, uygulamanın yayınlanması)
 fotograf_okuma.py         7. hafta: fotoğraftan okumanın Python karşılığı (uygulamadakiyle aynı yöntem)
 11_ince_ayar.py           7. hafta: kullanıcı düzeltmeleriyle modelin ince ayarı
+12_kullanici_testi.py     8. hafta: kullanıcı testinin (SUS) analizi ve yeni kişilerle model kararı
+13_istatistiksel_karsilastirma.py  8. hafta: modellerin kişi düzeyinde istatistiksel karşılaştırması
 model_yapisi.py           Modeller (MLP, LeNet-5 benzeri CNN, Derin CNN), eğitim ve veri artırma
 ortak.py                  Ön işleme (MNIST biçimine getirme, vuruşları görüntüye çevirme)
-index.html                Uygulama: çizim, canlı tahmin, 10 rakamın olasılıkları, hız testi
+index.html                Uygulama: çizim, canlı tahmin, 10 rakamın olasılıkları, hız testi, kullanıcı testi (?test)
 uygulama_sablon.html      index.html'in kaynağı (modeller eklenmeden önceki hali)
 manifest.webmanifest, sw.js, simgeler/   Telefona kurulum ve internetsiz açılma (PWA)
 onnx/                     Uygulamada kullanılan ONNX modelleri

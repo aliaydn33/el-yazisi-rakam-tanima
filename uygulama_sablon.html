@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="simgeler/simge-192.png">
 <link rel="apple-touch-icon" href="simgeler/simge-180.png">
 <!--
-  El Yazısı Rakam Tanıma - uygulamanın 7. hafta sürümü (41.GRUP)
+  El Yazısı Rakam Tanıma - uygulamanın 8. hafta sürümü (41.GRUP)
   6. haftada eklenenler: model emin olmadığında "rakam değil" uyarısı ve "Açıkla" düğmesiyle Grad-CAM ısı haritası.
   7. haftada eklenenler:
     - Uygulama telefona kurulabilir (PWA): manifest.webmanifest ve sw.js (service worker). İlk açılıştan sonra
@@ -22,6 +22,10 @@
     - Yanlış tahminin düzeltilmesi: kullanıcı doğru rakamı seçer, düzeltme sunucuya (yoksa cihaza) kaydedilir.
     - Fotoğraftan okuma: kâğıda yazılmış rakamların fotoğrafı telefonda, internet olmadan okunur.
     - "Hakkında" bölümü: model, doğruluk değerleri, veri setleri ve kaynaklar.
+  8. haftada eklenenler:
+    - Kullanıcı testi: adres "?test" ile açıldığında onay metni, görevler ve SUS anketi gösterilir (H7). Sonuç,
+      adresteki "?test=<kimlik>" ile verilen Google Apps Script dağıtımına (veri toplamadaki rakam_verisi klasörü)
+      gönderilir. Kimlik yoksa sonuç dosya olarak indirilir.
 
   Bu dosya bir şablondur. 7_uygulama_olustur.py, onnx/ klasöründeki modelleri aşağıdaki "model-verisi"
   bölümüne ekleyerek index.html dosyasını üretir. Tahmin kullanıcının tarayıcısında yapılır, çizim sunucuya
@@ -64,7 +68,7 @@
   .isi-aciklama { font-size: .75rem; color: var(--ikincil); text-align: center; margin: 8px auto 0; max-width: 380px; display: none; }
   .isi-aciklama.acik { display: block; }
   .ipucu { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center;
-    color: #9AA3AF; font-size: .9rem; pointer-events: none; text-align: center; padding: 0 24px; }
+    color: #6B7280; font-size: .9rem; pointer-events: none; text-align: center; padding: 0 24px; }
   .dugmeler { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px auto 0; max-width: 380px; }
   button, select { font: inherit; font-size: .95rem; min-height: 44px; padding: 0 14px; border-radius: 10px;
     border: 1px solid var(--cizgi); background: var(--kart); color: var(--yazi); }
@@ -76,7 +80,7 @@
   /* tahmin */
   .sonuc { display: grid; grid-template-columns: 1fr; gap: 12px; }
   .rakam { display: flex; align-items: center; gap: 14px; }
-  #rakam { font-size: 4.2rem; line-height: 1; font-weight: 700; width: 64px; text-align: center; color: #B8BEC7;
+  #rakam { font-size: 4.2rem; line-height: 1; font-weight: 700; width: 64px; text-align: center; color: #8A93A0;
     font-variant-numeric: tabular-nums; }
   #rakam.var { color: var(--vurgu); }
   .rakam p { margin: 0; font-size: .85rem; color: var(--ikincil); line-height: 1.5; }
@@ -96,7 +100,7 @@
 
   /* model ve olcum */
   details { margin-top: 12px; }
-  summary { cursor: pointer; font-weight: 600; font-size: .95rem; padding: 2px 0; }
+  summary { cursor: pointer; font-weight: 600; font-size: .95rem; padding: 13px 0; margin: -11px 0; }
   .ayarlar { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
   label { display: block; font-size: .8rem; color: var(--ikincil); margin-bottom: 4px; }
   .durum { font-size: .8rem; color: var(--ikincil); margin: 10px 0 0; line-height: 1.45; }
@@ -118,12 +122,12 @@
   .ust-sag { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .etiket { font-size: .72rem; padding: 4px 9px; border-radius: 999px; background: var(--uyari-zemin);
     border: 1px solid var(--uyari-cizgi); color: var(--uyari-yazi); white-space: nowrap; }
-  #yukle { min-height: 36px; font-size: .85rem; padding: 0 12px; }
+  #yukle { min-height: 44px; font-size: .85rem; padding: 0 12px; }
 
   /* mod secimi */
   .modlar { display: grid; grid-template-columns: 1fr 1fr; max-width: 380px; margin: 0 auto 12px; border: 1px solid var(--cizgi);
     border-radius: 10px; overflow: hidden; }
-  .modlar button { border: 0; border-radius: 0; min-height: 40px; font-size: .9rem; background: var(--kart); }
+  .modlar button { border: 0; border-radius: 0; min-height: 44px; font-size: .9rem; background: var(--kart); }
   .modlar button + button { border-left: 1px solid var(--cizgi); }
   .modlar button[aria-pressed="true"] { background: var(--vurgu); color: #fff; }
   body.sayi-modu .tuval-kutu, body.sayi-modu .dugmeler { max-width: 640px; }
@@ -137,7 +141,7 @@
   body.sayi-modu .rakam-sonuc { display: none; }
   #okunan { font-size: 2rem; font-weight: 700; line-height: 1.2; color: var(--vurgu); word-break: break-all;
     font-variant-numeric: tabular-nums; min-height: 2.4rem; }
-  #okunan.bos { color: #B8BEC7; font-size: 1.2rem; font-weight: 600; }
+  #okunan.bos { color: #6B7280; font-size: 1.2rem; font-weight: 600; }
   #okunanNot { font-size: .85rem; color: var(--ikincil); margin: 4px 0 0; min-height: 1.2em; }
   .semboller { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
   .sembol { display: flex; flex-direction: column; align-items: center; width: 52px; padding: 4px 2px; border-radius: 8px;
@@ -150,7 +154,7 @@
 
   /* duzeltme */
   .duzelt { border-top: 1px solid var(--cizgi); padding-top: 10px; }
-  .bag { min-height: 36px; padding: 0 10px; font-size: .85rem; background: transparent; color: var(--vurgu); }
+  .bag { min-height: 44px; padding: 0 10px; font-size: .85rem; background: transparent; color: var(--vurgu); }
   .duzelt-rakamlar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
   .duzelt-rakamlar button { min-height: 44px; padding: 0; font-weight: 600; }
   .duzelt p { margin: 6px 0 0; }
@@ -171,6 +175,49 @@
   .uygulama-durum dd { white-space: normal; }
   .uygulama-durum .olcum-dugmeleri { margin-top: 8px; }
 
+  /* kullanici testi */
+  .test-serit { position: sticky; top: 0; z-index: 20; background: var(--kart); border: 2px solid var(--vurgu); border-radius: 12px;
+    padding: 8px 12px 10px; margin-bottom: 12px; box-shadow: 0 2px 12px rgba(28, 36, 48, .12); }
+  .test-ust { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .8rem; color: var(--ikincil); font-weight: 600; }
+  .test-ust .bag { color: var(--ikincil); margin: -6px -6px -6px 0; }
+  .test-cubuk { height: 4px; background: var(--vurgu-acik); border-radius: 2px; margin: 4px 0 6px; overflow: hidden; }
+  .test-cubuk i { display: block; height: 100%; width: 0; background: var(--vurgu); transition: width .2s; }
+  #testGorev { margin: 0; font-size: .98rem; line-height: 1.45; }
+  #testGorev b.hedef { font-size: 1.45rem; color: var(--vurgu); letter-spacing: .03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .test-dugmeler { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+  .test-dugmeler.sol { justify-content: flex-start; margin-top: 14px; }
+  .test-dugmeler input { flex: 1 1 150px; min-width: 0; min-height: 44px; font: inherit; font-size: 1.1rem; padding: 0 10px;
+    border: 1px solid var(--cizgi); border-radius: 10px; letter-spacing: .05em; }
+  #testSonraki { min-width: 120px; }
+  .test-serit .not { margin-top: 4px; }
+  .test-serit .not:empty { display: none; }
+  .test-ekran { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 50; background: rgba(28, 36, 48, .6);
+    overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px; }
+  body.test-acik { overflow: hidden; }
+  .test-icerik { max-width: 620px; margin: 0 auto; background: var(--kart); border-radius: 12px; padding: 18px; font-size: .93rem; line-height: 1.5; }
+  .test-icerik h2 { font-size: 1.15rem; margin-bottom: 10px; }
+  .test-icerik ul { padding-left: 18px; margin: 8px 0 12px; }
+  .test-icerik li { margin-bottom: 6px; }
+  .test-icerik fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  .test-icerik legend { padding: 0; font-weight: 600; margin-bottom: 8px; }
+  .soru { margin: 14px 0 4px !important; }
+  .secenekler, .olcek { display: grid; gap: 6px; }
+  .secenekler { grid-template-columns: repeat(3, 1fr); }
+  .olcek { grid-template-columns: repeat(5, 1fr); }
+  .secenekler label, .olcek label { position: relative; margin: 0; display: flex; align-items: center; justify-content: center; text-align: center;
+    min-height: 44px; padding: 4px; border: 1px solid var(--cizgi); border-radius: 10px; cursor: pointer; color: var(--yazi); font-size: .95rem; }
+  .secenekler input, .olcek input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .secenekler label.secili, .olcek label.secili { background: var(--vurgu); border-color: var(--vurgu); color: #fff; font-weight: 600; }
+  .secenekler label:focus-within, .olcek label:focus-within { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+  .sus-madde { border-top: 1px solid var(--cizgi) !important; padding: 12px 0 !important; }
+  .sus-madde legend { font-weight: 500; }
+  .olcek-uclar { display: flex; justify-content: space-between; font-size: .75rem; color: var(--ikincil); margin-top: 4px; }
+  .yorum-etiket { font-size: .9rem; color: var(--yazi); margin: 10px 0 6px; }
+  #testYorum { width: 100%; font: inherit; font-size: .93rem; padding: 8px 10px; border: 1px solid var(--cizgi); border-radius: 10px; resize: vertical; }
+  button.genis { width: 100%; margin-top: 12px; }
+  label.onay { display: flex; gap: 10px; align-items: center; font-size: .93rem; color: var(--yazi); margin: 8px 0 0; padding: 11px 0; min-height: 44px; cursor: pointer; }
+  label.onay input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--vurgu); }
+
   @media (max-width: 680px) {
     .izgara { grid-template-columns: 1fr; }
     /* telefonda tahminin tuvalin hemen altinda gorunmesi icin tuval ekran yuksekliginin yarisini gecmez */
@@ -188,13 +235,24 @@
   <header>
     <div>
       <h1>Rakam Tanıma</h1>
-      <p>El Yazısı Rakam Tanıma Projesi · 41.GRUP · 7. hafta sürümü</p>
+      <p>El Yazısı Rakam Tanıma Projesi · 41.GRUP · 8. hafta sürümü</p>
     </div>
     <div class="ust-sag">
       <span id="cevrimdisi" class="etiket" hidden>İnternet yok</span>
       <button id="yukle" hidden>Uygulamayı yükle</button>
     </div>
   </header>
+  <div id="testSerit" class="test-serit" hidden>
+    <div class="test-ust"><span id="testAdim"></span><button id="testBirak" class="bag">Testi bırak</button></div>
+    <div class="test-cubuk"><i id="testIlerleme"></i></div>
+    <p id="testGorev" aria-live="polite"></p>
+    <div class="test-dugmeler">
+      <input id="testYazilan" inputmode="numeric" autocomplete="off" placeholder="Örn. 4721" aria-label="Kâğıda yazdığınız rakamlar" hidden>
+      <button id="testAtla" hidden>Atla</button>
+      <button id="testSonraki" class="ana" disabled>Sonraki</button>
+    </div>
+    <p id="testNot" class="not"></p>
+  </div>
   <noscript><p class="durum uyari">Bu sayfa JavaScript ile çalışır. Dosya önizlemesi olarak açıldıysa çalışmaz, bağlantı bir tarayıcıda açılmalıdır.</p></noscript>
 
   <div class="izgara">
@@ -321,6 +379,10 @@
     </details>
   </section>
 </main>
+
+<div id="testEkran" class="test-ekran" role="dialog" aria-modal="true" aria-labelledby="testBaslik" hidden>
+  <div class="test-icerik" id="testIcerik"></div>
+</div>
 
 <script id="model-verisi" type="application/json">/*MODELLER*/</script>
 
@@ -1546,7 +1608,7 @@ var FotografOkuma = (function () {
   $("modSayi").addEventListener("click", function () { modSec("sayi"); });
 
   // ---------- yanlis tahminin duzeltilmesi (IG-09) ----------
-  var SURUM = "7. hafta", YEREL = "rakam-tanima-duzeltmeler", sonTahmin = null, sonGiris = "", sunucu = null;
+  var SURUM = "8. hafta", YEREL = "rakam-tanima-duzeltmeler", sonTahmin = null, sonGiris = "", sunucu = null, testFotoKancasi = null;
   for (var dr = 0; dr < 10; dr++) {
     var db = document.createElement("button"); db.textContent = dr; db.setAttribute("data-rakam", dr);
     db.setAttribute("aria-label", "Doğru rakam " + dr); $("duzeltRakamlar").appendChild(db);
@@ -1586,7 +1648,7 @@ var FotografOkuma = (function () {
   }
   function duzeltmeKaydet(dogru) {
     var k = duzeltmeKaydi(dogru), durum = function (m) { $("duzeltDurum").textContent = m; };
-    sonTahmin.kaydedildi = true; $("duzeltRakamlar").hidden = true; $("duzeltAc").hidden = true;
+    sonTahmin.kaydedildi = true; sonTahmin.dogru = dogru; $("duzeltRakamlar").hidden = true; $("duzeltAc").hidden = true;
     function yerel(neden) {
       var l = yerelOku(); l.push(k); if (l.length > 500) l = l.slice(-500);
       var tamam = yerelYaz(l); yerelSayiGoster();
@@ -1673,6 +1735,7 @@ var FotografOkuma = (function () {
     c.hidden = false;
     $("fotoMetin").textContent = s.metin || "Rakam bulunamadı";
     fotoDurum(n ? n + " rakam okundu" + (sup ? ", " + sup + " tanesinden emin değil (turuncu)" : "") + " · " + ms(sure) : "Fotoğrafta rakam bulunamadı.");
+    if (testFotoKancasi) testFotoKancasi(s, sure, kaynak.width, kaynak.height);
   }
   $("fotoSec").addEventListener("change", function () {
     var f = this.files && this.files[0]; this.value = "";
@@ -1856,7 +1919,7 @@ var FotografOkuma = (function () {
           " · tahmin: " + en + " (%" + sayi(p[en] * 100) + ")</p>";
         var tarih = new Date(), iki = function (n) { return (n < 10 ? "0" : "") + n; };
         sonOlcum = [
-          "Rakam Tanıma - hız testi (7. hafta sürümü)",
+          "Rakam Tanıma - hız testi (" + SURUM + " sürümü)",
           "Tarih: " + tarih.getFullYear() + "-" + iki(tarih.getMonth() + 1) + "-" + iki(tarih.getDate()) + " " + iki(tarih.getHours()) + ":" + iki(tarih.getMinutes()),
           "Model: " + b.model + ", " + (/int8/.test(ad) ? "8 bit" : "32 bit") + ", " + sayi(b.dosya_KB) + " KB",
           "Hesaplama: " + motorAdi(motor),
@@ -1897,6 +1960,420 @@ var FotografOkuma = (function () {
       "<dt>MNIST test doğruluğu</dt><dd>%" + sayi(b["mnist_test_%"], 2) + "</dd>";
   })();
   baglantiDurumu(); yerelSayiGoster(); sunucuyuBul();
+  var uygulamaHazirAni = performance.now();     // sayfa acilip cizime hazir oldugu an (sayfanin acilisindan itibaren ms)
+
+  // ---------- kullanici testi (H7, IOG-09): adres "?test" ile acilir ----------
+  // Katilimci onay verir, ustteki seritte gosterilen gorevleri uygulamanin kendisinde yapar ve SUS anketini doldurur.
+  // Adresteki "?test=<kimlik>" bir Google Apps Script dagitimina aitse sonuc oraya (Drive'daki rakam_verisi klasorune)
+  // gonderilir; kimlik yoksa ya da gonderilemezse sonuc dosya olarak indirilir. Kisiyi tanimlayan bilgi istenmez.
+  // Yarim kalan test bu cihazda saklanir, sayfa yeniden acilinca kaldigi yerden devam eder.
+  var Test = (function () {
+    var arama = location.search.match(/[?&]test(?:=([^&#]*))?(?:[&#]|$)/);
+    if (!arama) return null;
+    var kimlik = decodeURIComponent(arama[1] || "");
+    var ADRES = /^[A-Za-z0-9_-]{20,160}$/.test(kimlik) ? "https://script.google.com/macros/s/" + kimlik + "/exec" : "";
+    var ANAHTAR = "rakam-tanima-kullanici-testi", RAKAM_TEKRAR = 2;
+    var SUS = [
+      "Bu uygulamayı sıklıkla kullanmak isteyeceğimi düşünüyorum.",
+      "Bu uygulamayı gereksiz bir şekilde karmaşık buldum.",
+      "Bu uygulamanın kullanımının kolay olduğunu düşündüm.",
+      "Bu uygulamayı kullanabilmek için daha teknik bir kişinin desteğine ihtiyaç duyacağımı düşünüyorum.",
+      "Bu uygulamadaki çeşitli fonksiyonları iyi entegre edilmiş buldum.",
+      "Bu uygulamada çok fazla tutarsızlık olduğunu düşündüm.",
+      "Birçok insanın bu uygulamayı kullanmayı çok çabuk öğreneceğini sanıyorum.",
+      "Bu uygulamanın kullanımını çok elverişsiz buldum.",
+      "Bu uygulamayı kullanırken kendimden çok emin hissettim.",
+      "Bu uygulamada bir şeyler yapabilmek için öncelikle bir çok şey öğrenmem gerekti."
+    ];
+    var GOREVLER = { rakam: 1, sayi: 2, islem: 2, rakamdegil: 3, acikla: 4, foto: 5 };
+    var durum = null, adimBas = 0, temizle = 0, geriAl = 0, fotoSonuc = null, yeniYukleme = true, olcumSozu = null, bekliyor = false;
+    var ekran = $("testEkran"), icerik = $("testIcerik");
+
+    function sakla() { try { localStorage.setItem(ANAHTAR, JSON.stringify(durum)); } catch (h) { } }
+    function oku() { try { return JSON.parse(localStorage.getItem(ANAHTAR) || "null"); } catch (h) { return null; } }
+    function sil() { try { localStorage.removeItem(ANAHTAR); } catch (h) { } }
+    function rastgele(n) {
+      if (window.crypto && crypto.getRandomValues) { var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+      return Math.floor(Math.random() * n);
+    }
+    function karistir(a) { for (var i = a.length - 1; i > 0; i--) { var j = rastgele(i + 1), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+    function arada(a, b) { return a + rastgele(b - a + 1); }
+    function basamakli(n) { var s = String(arada(1, 9)); while (s.length < n) s += rastgele(10); return s; }
+    function yeniNo() { var h = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ", s = ""; for (var i = 0; i < 6; i++) s += h[rastgele(h.length)]; return "T-" + s; }
+    function sade(m) { return String(m || "").replace(/\s+/g, "").replace(/-/g, SayiOkuma.EKSI).replace(/[x*]/gi, SayiOkuma.CARPI); }
+    function iki(n) { return (n < 10 ? "0" : "") + n; }
+    function damga(t) { return t.getFullYear() + iki(t.getMonth() + 1) + iki(t.getDate()) + "-" + iki(t.getHours()) + iki(t.getMinutes()); }
+    function vurusKopya(v) { return v.map(function (s) { return s.map(function (p) { return [yuvarla1(p[0]), yuvarla1(p[1])]; }); }); }
+    function dort(x) { return Math.round(x * 10000) / 10000; }
+    function html(m) { return String(m).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+    function adimlar() {
+      var a = [], r = [];
+      for (var k = 0; k < RAKAM_TEKRAR; k++) for (var d = 0; d < 10; d++) r.push(d);
+      karistir(r).forEach(function (d) { a.push({ tur: "rakam", hedef: String(d) }); });
+      a.push({ tur: "sayi", hedef: basamakli(4) }, { tur: "sayi", hedef: basamakli(5) });
+      a.push({ tur: "islem", hedef: arada(11, 99) + " + " + arada(100, 999) });
+      a.push({ tur: "islem", hedef: arada(2, 9) + " " + SayiOkuma.CARPI + " " + arada(11, 99) + " " + SayiOkuma.EKSI + " " + arada(10, 99) });
+      a.push({ tur: "rakamdegil" }, { tur: "rakamdegil" }, { tur: "acikla" }, { tur: "foto" });
+      return a;
+    }
+
+    function cihaz() {
+      var ua = navigator.userAgent || "", d = {};
+      var ios = /iPhone|iPod/.test(ua), ipad = /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), android = /Android/.test(ua);
+      d.isletim_sistemi = ios ? "iOS" : ipad ? "iPadOS" : android ? "Android" : /Windows/.test(ua) ? "Windows" :
+        /CrOS/.test(ua) ? "ChromeOS" : /Mac OS X|Macintosh/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : "diğer";
+      d.cihaz_turu = (ios || (android && /Mobile/.test(ua))) ? "telefon" : (ipad || android) ? "tablet" : "bilgisayar";
+      var t = [["Samsung Internet", /SamsungBrowser\/(\d+)/], ["Edge", /Edg(?:A|iOS)?\/(\d+)/], ["Opera", /OPR\/(\d+)/],
+               ["Yandex", /YaBrowser\/(\d+)/], ["Firefox", /(?:Firefox|FxiOS)\/(\d+)/], ["Chrome", /(?:Chrome|CriOS)\/(\d+)/],
+               ["Safari", /Version\/(\d+).*Safari/]];
+      d.tarayici = "diğer"; d.tarayici_surumu = null;
+      for (var i = 0; i < t.length; i++) { var m = ua.match(t[i][1]); if (m) { d.tarayici = t[i][0]; d.tarayici_surumu = Number(m[1]); break; } }
+      d.uygulama_ici = /Instagram|FBAN|FBAV|Line\/|; wv\)/.test(ua);
+      d.ekran = [window.innerWidth, window.innerHeight]; d.piksel_orani = window.devicePixelRatio || 1;
+      d.cekirdek = navigator.hardwareConcurrency || null; d.bellek_GB = navigator.deviceMemory || null;
+      d.dokunmatik_nokta = navigator.maxTouchPoints || 0;
+      d.kurulu = !!((window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true);
+      d.tarayici_bilgisi = ua;
+      return d;
+    }
+    function acilis() {
+      var n = performance.getEntriesByType ? performance.getEntriesByType("navigation")[0] : null, c = navigator.connection;
+      return {
+        service_worker_ile: !!(n && n.workerStart > 0),
+        aktarilan_KB: n && n.transferSize !== undefined ? Math.round(n.transferSize / 1024) : null,
+        sayfa_ms: n ? Math.round(n.domContentLoadedEventEnd) : null,
+        uygulama_hazir_ms: Math.round(uygulamaHazirAni),
+        ort_hazir_ms: ortYuklemeSuresi !== null ? Math.round(baslangic + ortYuklemeSuresi) : null,
+        baglanti: c ? (c.effectiveType || null) : null, baglanti_turu: c ? (c.type || null) : null
+      };
+    }
+
+    // ---- ekranlar ----
+    function ekranAc(m) { icerik.innerHTML = m; ekran.hidden = false; ekran.scrollTop = 0; document.body.classList.add("test-acik"); }
+    function ekranKapat() { ekran.hidden = true; document.body.classList.remove("test-acik"); }
+    function girisEkrani() {
+      ekranAc(
+        '<h2 id="testBaslik">Kullanıcı testi</h2>' +
+        "<p>Bu test, El Yazısı Rakam Tanıma uygulamasının ne kadar kolay kullanıldığını ölçmek için yapılmaktadır. " +
+        "Ölçülen sizin beceriniz değil, uygulamadır. Yaklaşık 5-7 dakika sürer.</p><ul>" +
+        "<li>Uygulamada yapmanız istenen kısa görevler üstte sırayla gösterilir: rakam çizmek, sayı ve işlem yazmak, rakam " +
+        "olmayan bir şey çizmek ve isterseniz kâğıda yazdığınız rakamların fotoğrafını çekmek. Sonunda 10 soruluk kısa bir anket vardır.</li>" +
+        "<li>Kaydedilenler: çizimleriniz, uygulamanın tahminleri, görev süreleri, anket cevaplarınız, cihaz ve tarayıcı türü ile " +
+        "uygulamanın bu cihazdaki hızı. Fotoğrafın kendisi kaydedilmez, yalnızca içinden okunan rakamların küçük görüntüleri kaydedilir.</li>" +
+        "<li>Adınız ya da sizi tanımlayan bir bilgi istenmez. Size rastgele bir katılımcı numarası verilir. Veriler yalnızca " +
+        "bu ders projesinde uygulamayı değerlendirmek ve geliştirmek için kullanılır.</li>" +
+        "<li>Katılım gönüllüdür. Testi istediğiniz an bırakabilirsiniz, bu durumda hiçbir şey gönderilmez.</li></ul>" +
+        '<fieldset class="soru"><legend>Daha önce bu projenin rakam toplama çalışmasına (50 rakam çizdiğiniz oturum) katıldınız mı?</legend>' +
+        '<div class="secenekler" id="oncekiSecim">' +
+        '<label><input type="radio" name="onceki" value="hayir"><span>Hayır</span></label>' +
+        '<label><input type="radio" name="onceki" value="evet"><span>Evet</span></label>' +
+        '<label><input type="radio" name="onceki" value="bilmiyorum"><span>Hatırlamıyorum</span></label></div></fieldset>' +
+        '<label class="onay"><input type="checkbox" id="testOnay"> Yukarıdaki metni okudum, katılmayı kabul ediyorum.</label>' +
+        '<button id="testBasla" class="ana genis" disabled>Teste başla</button>' +
+        (ADRES ? "" : '<p class="not">Bu bağlantıda sonuçların gönderileceği adres yok. Test sonunda sonuç dosya olarak indirilecektir.</p>'));
+      var onceki = null;
+      function kontrol() { $("testBasla").disabled = !($("testOnay").checked && onceki); }
+      secimler($("oncekiSecim"), function (v) { onceki = v; kontrol(); });
+      $("testOnay").addEventListener("change", kontrol);
+      $("testBasla").addEventListener("click", function () {
+        durum = { no: yeniNo(), baslama: new Date().toISOString(), onceki_katilim: onceki, adimlar: adimlar(), sira: 0,
+                  sonuclar: [], acilis: acilis(), cihaz: cihaz(), giris_turleri: [], bitti: false, gonderildi: false };
+        sakla(); ekranKapat(); adimGoster();
+      });
+    }
+    function secimler(kap, degisti) {
+      kap.addEventListener("change", function (e) {
+        if (!e.target || e.target.type !== "radio") return;
+        Array.prototype.forEach.call(kap.querySelectorAll("label"), function (l) { l.classList.toggle("secili", l.contains(e.target)); });
+        degisti(e.target.value);
+      });
+    }
+
+    // ---- gorev seridi ----
+    function sayac(tur) {
+      var ayni = durum.adimlar.filter(function (a) { return GOREVLER[a.tur] === GOREVLER[tur]; }), once = 0;
+      for (var i = 0; i < durum.sira; i++) if (GOREVLER[durum.adimlar[i].tur] === GOREVLER[tur]) once++;
+      return " (" + (once + 1) + " / " + ayni.length + ")";
+    }
+    function adimGoster() {
+      if (durum.sira >= durum.adimlar.length) { durum.bitti = true; sakla(); return susEkrani(); }
+      var a = durum.adimlar[durum.sira], g = $("testGorev"), n = $("testNot"), ilk = durum.sira === 0 || durum.adimlar[durum.sira - 1].tur !== a.tur;
+      $("testSerit").hidden = false; $("testAdim").textContent = "Görev " + GOREVLER[a.tur] + " / 5";
+      $("testAtla").hidden = true; $("testYazilan").hidden = true; $("testYazilan").value = ""; fotoSonuc = null;
+      temizle = 0; geriAl = 0; adimBas = performance.now();
+      var hedef = '<b class="hedef">' + html(a.hedef || "") + "</b>";
+      if (a.tur === "rakam") {
+        g.innerHTML = "Şu rakamı çizin: " + hedef + sayac(a.tur);
+        n.textContent = durum.sira === 0 ? "Çizdikten sonra tahmine bakın ve “Sonraki”ye basın. Tahmin yanlışsa “Tahmin yanlış mı?” ile doğrusunu " +
+          "seçebilirsiniz. Tahmin yanlış olsa da yeniden çizmeyin." : "";
+      } else if (a.tur === "sayi" || a.tur === "islem") {
+        g.innerHTML = (ilk && a.tur === "sayi" ? "Üstteki <b>Sayı / işlem</b> düğmesine basın ve şu sayıyı yazın: " :
+          a.tur === "sayi" ? "Şu sayıyı yazın: " : "Şu işlemi yazın: ") + hedef + sayac(a.tur);
+        n.textContent = ilk ? "Rakamları ve işaretleri yan yana yazın. Uygulama yanlış okusa da yeniden yazmayın, “Sonraki”ye geçin." : "";
+      } else if (a.tur === "rakamdegil") {
+        g.innerHTML = (ilk ? "Üstteki <b>Rakam</b> düğmesine basın ve rakam olmayan bir şey çizin: bir harf, kalp, yıldız ya da gülen yüz gibi." :
+          "Rakam olmayan başka bir şey çizin.") + sayac(a.tur);
+        n.textContent = "Uygulamanın ne dediğine bakın ve “Sonraki”ye basın.";
+      } else if (a.tur === "acikla") {
+        g.innerHTML = "Bir rakam çizin. Sonra uygulamanın bu tahmini çizimin neresine bakarak yaptığını görmeye çalışın.";
+        n.textContent = "Bulamazsanız “Bulamadım”a basın.";
+        $("testAtla").textContent = "Bulamadım"; $("testAtla").hidden = false;
+      } else {
+        g.innerHTML = "İsteğe bağlı: bir kâğıda 3-4 rakam yazın ve aşağıdaki <b>Fotoğraf seç</b> ile fotoğrafını çekin.";
+        n.textContent = "Kâğıt ya da kamera yoksa “Atla”ya basın.";
+        $("testAtla").textContent = "Atla"; $("testAtla").hidden = false;
+        $("fotoMetin").textContent = ""; $("fotoTuval").hidden = true;
+        fotoDurum("Kâğıda yazılmış rakamların fotoğrafını çekin ya da seçin.");
+      }
+      $("testIlerleme").style.width = Math.round(100 * durum.sira / durum.adimlar.length) + "%";
+      if (a.tur === "foto") setTimeout(function () { $("fotoKart").scrollIntoView({ behavior: "smooth", block: "center" }); }, 50);
+      else tuvaliGoster();
+      durumKontrol();
+    }
+    function tuvaliGoster() {        // yeni gorevde tuval, ustteki seridin altinda tamamen gorunecek sekilde kaydirilir
+      var serit = $("testSerit").getBoundingClientRect(), k = tuval.closest(".kart").getBoundingClientRect();
+      var ust = Math.max(serit.bottom, 0) + 8, alt = k.top + Math.min(k.height, window.innerHeight - ust);
+      if (k.top < ust || alt > window.innerHeight) window.scrollBy(0, k.top - ust);
+    }
+    function hazirMi() {
+      if (!durum || durum.bitti || bekliyor || aktif !== null) return false;
+      var a = durum.adimlar[durum.sira];
+      if (!a) return false;
+      if (a.tur === "rakam" || a.tur === "rakamdegil") return mod === "rakam" && vuruslar.length > 0;
+      if (a.tur === "sayi" || a.tur === "islem") return mod === "sayi" && vuruslar.length > 0;
+      if (a.tur === "acikla") return mod === "rakam" && vuruslar.length > 0 && isiAcik;
+      return !!fotoSonuc && /\d/.test($("testYazilan").value);
+    }
+    function durumKontrol() { if (durum && !durum.bitti) $("testSonraki").disabled = !hazirMi(); }
+    function tuvaliTemizle() { vuruslar = []; aktif = null; duzeltSifirla(); isiAcik = false; $("acikla").setAttribute("aria-pressed", "false"); isiKatman.className = ""; $("isiAciklama").className = "isi-aciklama"; isiTemizle(); yenidenCiz(); }
+    function ilerle(kayit) {
+      kayit.sure_ms = Math.round(performance.now() - adimBas); kayit.temizle = temizle; kayit.geri_al = geriAl;
+      durum.sonuclar.push(kayit); durum.sira++; sakla();
+      if (kayit.tur !== "foto") tuvaliTemizle();
+      bekliyor = false; adimGoster();
+    }
+    function sonraki() {
+      if (!hazirMi()) return;
+      var a = durum.adimlar[durum.sira], motor = etkinMotor(), cizim = vuruslar.slice(), r = tuval.getBoundingClientRect();
+      var kayit = { tur: a.tur, hedef: a.hedef || null, tuval: [Math.round(r.width), Math.round(r.height)], giris_turu: sonGiris || null };
+      bekliyor = true; durumKontrol();
+      if (durum.giris_turleri.indexOf(sonGiris) < 0 && sonGiris) durum.giris_turleri.push(sonGiris);
+      if (a.tur === "rakam" || a.tur === "rakamdegil" || a.tur === "acikla") {
+        var g = OnIsleme.cizimden28(cizim), duzeltme = sonTahmin && sonTahmin.kaydedildi ? sonTahmin.dogru : null;
+        modeliCalistir(g, motor).then(function (skor) {
+          var p = softmax(skor), en = p.indexOf(Math.max.apply(null, p));
+          kayit.model = modelAdi; kayit.hesaplayan = motor; kayit.tahmin = en; kayit.guven = dort(p[en]); kayit.rakam_degil = rakamDegilMi(skor);
+          kayit.duzeltme = duzeltme; kayit.goruntu = Array.prototype.slice.call(g); kayit.vuruslar = vurusKopya(cizim);
+          if (a.tur === "acikla") kayit.bulundu = true;
+          ilerle(kayit);
+        }, function (h) { bekliyor = false; $("testNot").textContent = "Tahmin yapılamadı: " + (h && h.message || h); });
+      } else if (a.tur === "sayi" || a.tur === "islem") {
+        sayiOku(cizim, motor).then(function (s) {
+          kayit.model = modelAdi; kayit.hesaplayan = motor; kayit.okunan = s.metin; kayit.sonuc = s.sonuc; kayit.hata = s.hata;
+          kayit.dogru = sade(s.metin) === sade(a.hedef);
+          kayit.semboller = s.semboller.map(function (x) { return { tur: x.tur, deger: x.deger, guven: x.guven ? dort(x.guven) : null, supheli: !!x.supheli }; });
+          kayit.vuruslar = vurusKopya(cizim);
+          ilerle(kayit);
+        }, function (h) { bekliyor = false; $("testNot").textContent = "Okunamadı: " + (h && h.message || h); });
+      } else {
+        var y = $("testYazilan").value.replace(/[^0-9]/g, "");
+        fotoSonuc.yazilan = y; fotoSonuc.dogru = y === fotoSonuc.okunan.replace(/[^0-9]/g, "");
+        for (var k in fotoSonuc) kayit[k] = fotoSonuc[k];
+        ilerle(kayit);
+      }
+    }
+    function atla() {
+      var a = durum && durum.adimlar[durum.sira];
+      if (!a || bekliyor) return;
+      if (a.tur === "acikla") ilerle({ tur: "acikla", bulundu: false });
+      else if (a.tur === "foto") ilerle({ tur: "foto", atlandi: true });
+    }
+    testFotoKancasi = function (s, sure, W, H) {
+      var a = durum && !durum.bitti && durum.adimlar[durum.sira];
+      if (!a || a.tur !== "foto") return;
+      var rakamlar = [];
+      s.satirlar.forEach(function (satir, i) {
+        satir.rakamlar.forEach(function (r) {
+          rakamlar.push({ satir: i, rakam: r.rakam, guven: dort(r.guven), emin_degil: !!r.emin_degil, kutu: r.kutu, goruntu: r.goruntu });
+        });
+      });
+      fotoSonuc = { atlandi: false, okunan: s.metin, rakam_sayisi: rakamlar.length, satir_sayisi: s.satirlar.length,
+                    sure_ms: Math.round(sure), genislik: W, yukseklik: H, rakamlar: rakamlar, hesaplayan: etkinMotor(), model: modelAdi };
+      $("testGorev").innerHTML = "Kâğıda hangi rakamları yazdınız? Soldan sağa, boşluk bırakmadan yazın.";
+      $("testNot").textContent = "Uygulamanın okuduğu: " + (s.metin ? s.metin.replace(/\n/g, " / ") : "rakam bulunamadı") +
+        ". Başka bir fotoğraf da deneyebilirsiniz, son fotoğraf kaydedilir.";
+      $("testYazilan").hidden = false; $("testYazilan").focus();
+      durumKontrol();
+    };
+
+    // ---- anket ----
+    function susEkrani() {
+      $("testSerit").hidden = true;
+      if (!olcumSozu) olcumSozu = hizOlc();
+      var m = '<h2 id="testBaslik">Son adım: anket</h2><p>Görevler bitti, teşekkürler. Şimdi uygulama hakkındaki görüşünüzü öğrenmek istiyoruz. ' +
+        "Her ifade için ne kadar katıldığınızı seçin. Çok düşünmeden, ilk aklınıza gelen cevabı verin.</p>";
+      SUS.forEach(function (s, i) {
+        m += '<fieldset class="sus-madde"><legend>' + (i + 1) + ". " + s + '</legend><div class="olcek" data-madde="' + i + '">';
+        for (var k = 1; k <= 5; k++) m += '<label><input type="radio" name="sus' + i + '" value="' + k + '"><span>' + k + "</span></label>";
+        m += '</div><div class="olcek-uclar"><span>Hiç katılmıyorum</span><span>Tamamen katılıyorum</span></div></fieldset>';
+      });
+      m += '<label for="testYorum" class="yorum-etiket">Eklemek istediğiniz bir şey var mı? (isteğe bağlı)</label>' +
+        '<textarea id="testYorum" maxlength="500" rows="3" placeholder="Lütfen ad, telefon gibi kişisel bilgi yazmayın."></textarea>' +
+        '<button id="testGonder" class="ana genis" disabled>Gönder</button><p class="not" id="testGonderNot">10 ifadenin hepsini cevaplayın.</p>';
+      ekranAc(m);
+      var cevap = durum.sus || [null, null, null, null, null, null, null, null, null, null];
+      Array.prototype.forEach.call(icerik.querySelectorAll(".olcek"), function (o) {
+        var i = Number(o.getAttribute("data-madde"));
+        secimler(o, function (v) {
+          cevap[i] = Number(v); durum.sus = cevap; sakla();
+          var eksik = cevap.filter(function (x) { return !x; }).length;
+          $("testGonder").disabled = eksik > 0;
+          $("testGonderNot").textContent = eksik ? eksik + " ifade cevaplanmadı." : "";
+        });
+      });
+      $("testGonder").addEventListener("click", function () {
+        durum.yorum = $("testYorum").value.slice(0, 500); bitir();
+      });
+    }
+    function susPuani(c) {
+      var t = 0;
+      for (var i = 0; i < 10; i++) t += i % 2 === 0 ? c[i] - 1 : 5 - c[i];
+      return t * 2.5;
+    }
+
+    // ---- bu cihazda hiz (IOG-01) ----
+    function olc(n, is) {
+      var s = [], i = 0;
+      return new Promise(function (coz, reddet) {
+        (function adim() {
+          if (i >= n) return coz(s);
+          var t0 = performance.now();
+          Promise.resolve(is()).then(function () { s.push(performance.now() - t0); i++; if (i % 10 === 0) setTimeout(adim, 0); else adim(); }, reddet);
+        })();
+      });
+    }
+    function ozet(s) { var x = istatistik(s); return { ortalama: dort(x.ort), medyan: dort(x.med), yavas5: dort(x.p95) }; }
+    function hizOlc() {
+      var uyg = SIRA.filter(function (a) { return MODELLER[a].bilgi.secilen && /int8/.test(a); })[0] || modelAdi;
+      var derin = SIRA.filter(function (a) { return !MODELLER[a].bilgi.secilen && /int8/.test(a); })[0];
+      var son = durum.sonuclar.filter(function (k) { return k.tur === "rakam" && k.vuruslar; }).slice(-1)[0];
+      var cizim = son ? son.vuruslar : ornekCizim(), g = OnIsleme.cizimden28(cizim), motor = etkinMotor(), h = { hesaplayan: motor };
+      return olc(10, function () { OnIsleme.cizimden28(cizim); })
+        .then(function () { return olc(100, function () { OnIsleme.cizimden28(cizim); }); })
+        .then(function (s) { h.on_isleme_ms = ozet(s); return olc(10, function () { return modeliCalistir(g, motor, uyg); }); })
+        .then(function () { return olc(100, function () { return modeliCalistir(g, motor, uyg); }); })
+        .then(function (s) {
+          h.uygulama_modeli_ms = ozet(s); h.uygulama_modeli = uyg;
+          if (!derin) return null;
+          return olc(10, function () { return modeliCalistir(g, motor, derin); })
+            .then(function () { return olc(100, function () { return modeliCalistir(g, motor, derin); }); })
+            .then(function (s2) { h.derin_ms = ozet(s2); h.derin_model = derin; });
+        })
+        .then(function () { return h; }, function (e) { h.hata = String(e && e.message || e); return h; });
+    }
+
+    // ---- gonderme ----
+    function paket() {
+      var bit = new Date(), d = durum;
+      var ornek = d.sonuclar.filter(function (k) { return k.tur === "rakam"; });
+      return {
+        proje: "El Yazısı Rakam Tanıma Projesi - 41.GRUP", tur: "kullanici_testi", surum: SURUM,
+        katilimci_no: d.no, dosya_adi: "kullanici_testi_" + d.no + "_" + damga(new Date(d.baslama)) + ".json",
+        baslama: d.baslama, bitis: bit.toISOString(), sure_sn: Math.round((bit - new Date(d.baslama)) / 1000),
+        onceki_katilim: d.onceki_katilim, cihaz: d.cihaz, acilis: d.acilis, hiz: d.hiz || null, giris_turleri: d.giris_turleri,
+        ornekler: ornek,
+        sayilar: d.sonuclar.filter(function (k) { return k.tur === "sayi" || k.tur === "islem"; }),
+        rakam_degil: d.sonuclar.filter(function (k) { return k.tur === "rakamdegil"; }),
+        acikla: d.sonuclar.filter(function (k) { return k.tur === "acikla"; })[0] || null,
+        fotograf: d.sonuclar.filter(function (k) { return k.tur === "foto"; })[0] || null,
+        sus: d.sus, sus_puani: susPuani(d.sus), yorum: d.yorum || ""
+      };
+    }
+    function gonder(metin) {
+      if (!ADRES) return Promise.reject(new Error("gönderilecek adres yok"));
+      return zamanAsimi(fetch(ADRES, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: metin }), 25000, "zaman aşımı")
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (!j || j.durum !== "tamam") { var e = new Error(j && j.mesaj || "kaydedilemedi"); e.sunucu = true; throw e; } return j; })
+        .catch(function (h) {
+          if (h && h.sunucu) throw h;     // sunucu cevap verdi ama kaydetmedi
+          // yanit okunamadiysa (bazi tarayicilarda yonlendirme sonrasi) ayni kayit bir kez daha gonderilir; dosya adi ayni oldugu icin cift kayit olmaz
+          return zamanAsimi(fetch(ADRES, { method: "POST", mode: "no-cors", body: metin }), 25000, "zaman aşımı").then(function () { return { durum: "gonderildi" }; });
+        });
+    }
+    function indir(p) {
+      var metin = JSON.stringify(p), blob = new Blob([metin], { type: "application/json" });
+      var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = p.dosya_adi;
+      document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+    function paylas(p) {
+      var dosya = new File([JSON.stringify(p)], p.dosya_adi, { type: "application/json" });
+      return navigator.share({ files: [dosya], title: "Kullanıcı testi " + p.katilimci_no });
+    }
+    function bitir() {
+      $("testGonder").disabled = true; $("testGonderNot").textContent = "Gönderiliyor…";
+      olcumSozu.then(function (h) {
+        durum.hiz = h; sakla();
+        var p = paket();
+        return gonder(JSON.stringify(p)).then(function () { durum.gonderildi = true; sakla(); tesekkur(); }, function (e) { gonderilemedi(p, e); });
+      });
+    }
+    function gonderilemedi(p, e) {
+      var paylasilir = false;
+      try { paylasilir = !!(navigator.canShare && navigator.canShare({ files: [new File(["{}"], "x.json", { type: "application/json" })] })); } catch (h) { }
+      ekranAc('<h2 id="testBaslik">Sonuç gönderilemedi</h2><p>' + (ADRES ? "Sonuç gönderilemedi (" + html(e && e.message || e) + "). İnternet bağlantınızı kontrol edip yeniden deneyin. " : "") +
+        "Olmazsa sonucu dosya olarak kaydedip proje ekibine iletebilirsiniz. Cevaplarınız bu cihazda saklanıyor.</p>" +
+        '<div class="test-dugmeler sol">' + (ADRES ? '<button id="testTekrar" class="ana">Yeniden dene</button>' : "") +
+        (paylasilir ? '<button id="testPaylas">Paylaş</button>' : "") + '<button id="testIndir">Dosyayı indir</button></div>');
+      if ($("testTekrar")) $("testTekrar").addEventListener("click", function () { this.disabled = true; this.textContent = "Gönderiliyor…";
+        gonder(JSON.stringify(p)).then(function () { durum.gonderildi = true; sakla(); tesekkur(); }, function (e2) { gonderilemedi(p, e2); }); });
+      if ($("testPaylas")) $("testPaylas").addEventListener("click", function () { paylas(p).catch(function () { }); });
+      $("testIndir").addEventListener("click", function () { indir(p); });
+    }
+    function tesekkur() {
+      ekranAc('<h2 id="testBaslik">Teşekkürler!</h2><p>Cevaplarınız kaydedildi. Uygulamayı kullanmaya devam edebilirsiniz.</p>' +
+        '<div class="test-dugmeler sol"><button id="testKapat" class="ana">Uygulamaya dön</button>' +
+        '<button id="testYeni">Bu cihazda başka biri de katılacak</button></div>');
+      $("testKapat").addEventListener("click", function () { testtenCik(); });
+      $("testYeni").addEventListener("click", function () { sil(); durum = null; olcumSozu = null; tuvaliTemizle(); modSec("rakam"); girisEkrani(); });
+    }
+    function testtenCik() {
+      ekranKapat(); $("testSerit").hidden = true; durum = null;
+      try { history.replaceState(null, "", location.pathname); } catch (h) { }
+    }
+
+    // ---- baslangic ----
+    $("testSonraki").addEventListener("click", sonraki);
+    $("testAtla").addEventListener("click", atla);
+    $("testYazilan").addEventListener("input", durumKontrol);
+    $("temizle").addEventListener("click", function () { if (durum) temizle++; });
+    $("geriAl").addEventListener("click", function () { if (durum) geriAl++; });
+    var birak = null;
+    $("testBirak").addEventListener("click", function () {
+      var d = this;
+      if (!birak) { d.textContent = "Bırakmak için tekrar basın"; birak = setTimeout(function () { birak = null; d.textContent = "Testi bırak"; }, 3000); return; }
+      clearTimeout(birak); birak = null; d.textContent = "Testi bırak";
+      sil(); tuvaliTemizle(); testtenCik();
+    });
+    setInterval(durumKontrol, 250);
+    ortHazir.then(function () {           // test bu acilista basladiysa onnxruntime-web'in hazir olma suresi de eklenir
+      if (durum && yeniYukleme && durum.acilis && durum.acilis.ort_hazir_ms === null && durum.sonuclar.length === 0) {
+        durum.acilis.ort_hazir_ms = Math.round(baslangic + ortYuklemeSuresi); sakla();
+      }
+    }, function () { });
+
+    var eski = oku();
+    if (eski && !eski.gonderildi && Date.now() - new Date(eski.baslama).getTime() < 6 * 3600 * 1000) {
+      durum = eski; yeniYukleme = false; modSec("rakam");
+      if (durum.bitti) susEkrani(); else { adimGoster(); $("testNot").textContent = "Kaldığınız yerden devam ediyorsunuz. " + $("testNot").textContent; }
+    } else if (eski && eski.gonderildi) {
+      durum = eski; tesekkur();
+    } else {
+      sil(); modSec("rakam"); girisEkrani();
+    }
+    return { durum: function () { return durum; }, paket: function () { return durum ? paket() : null }, adres: ADRES };
+  })();
+
 
   // test betiginin (testler/uygulama_testi.py) kullandigi giris noktasi
   window.Uygulama = {
@@ -1927,7 +2404,8 @@ var FotografOkuma = (function () {
         s.satirlar.forEach(function (x) { x.rakamlar.forEach(function (r) { delete r.goruntu; }); }); return s;
       });
     },
-    pwa: function () { return pwaKontrol(); }
+    pwa: function () { return pwaKontrol(); },
+    test: Test
   };
 })();
 </script>

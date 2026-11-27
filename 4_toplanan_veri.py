@@ -43,7 +43,8 @@ if os.path.exists(_secilen):
 
 
 def oku():
-    dosyalar = sorted(glob.glob(os.path.join(KLASOR, "*.json")))
+    # Drive klasorunde 8. haftadaki kullanici testinin dosyalari da bulunur; onlar 12_kullanici_testi.py ile okunur
+    dosyalar = [d for d in sorted(glob.glob(os.path.join(KLASOR, "*.json"))) if not os.path.basename(d).startswith("kullanici_testi_")]
     if not dosyalar:
         raise SystemExit(f"'{KLASOR}' klasorunde .json dosyasi yok. veri_toplama.html ile toplanan dosyalari "
                          f"bu klasore koyup tekrar calistirin.")

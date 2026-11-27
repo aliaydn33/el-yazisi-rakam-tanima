@@ -57,6 +57,8 @@ def toplanan_kisiler(klasor="toplanan_veri"):
     """Veri toplama sayfasinin dosyalari: {katilimci: {rakam: [vuruslar, ...]}}"""
     kisiler, gorulen = {}, set()
     for yol in sorted(glob.glob(os.path.join(klasor, "*.json"))):
+        if os.path.basename(yol).startswith("kullanici_testi_"):
+            continue
         o = json.load(open(yol, encoding="utf-8"))
         for orn in o.get("ornekler", []):
             anahtar = (o["katilimci_no"], orn["sira"])
